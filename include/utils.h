@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <set>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -12,41 +13,43 @@
 struct DataItem
 {
     long double lat, lon;
-    bool sortLat = true;
-    bool operator<(const DataItem &item) const
+    // bool sortLat = true;
+    // bool operator<(const DataItem &item, bool sortLat) const
+    // {
+    //     if (sortLat)
+    //         return (lat < item.lat);
+    //     else
+    //         return (lon < item.lon);
+    // }
+};
+
+struct less_than_key
+{
+    bool sortByLat = true;
+    inline bool operator()(const DataItem &d1, const DataItem &d2)
     {
-        if (sortLat)
-        {
-            return (lat < item.lat);
-        }
+        if (sortByLat)
+            return (d1.lat < d2.lat);
         else
-        {
-            return (lon < item.lon);
-        }
+            return (d1.lon < d2.lon);
     }
 };
 
-struct Data{
-    int id;
-
-}
+struct ModelData
+{
+    std::vector<DataItem> list;
+    bool sortByLat = true;
+};
 
 namespace utils
 {
-    void log(std::vector<DataItem> const &data)
-    {
-        for (int i = 0; i < data.size(); i++)
-        {
-            std::cout << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << data.at(i).lat << ", " << data.at(i).lon;
-            std::cout << "\n";
-        }
-    }
-
-    std::vector<DataItem> read_data(std ::string const filename, bool sortLat)
+    ModelData read_data(std ::string const filename, bool sortLat)
     {
         std::fstream in(filename);
         std::string line;
         std::vector<DataItem> data;
+        std::set<long double> latCounter;
+        std::set<long double> lonCounter;
 
         int total = 0;
         while (std::getline(in, line))
@@ -57,14 +60,26 @@ namespace utils
 
             while (ss >> lat >> lon)
             {
-                DataItem item = {lat, lon, sortLat};
+                DataItem item = {lat, lon};
                 data.push_back(item);
+                latCounter.insert(lat);
+                lonCounter.insert(lat);
             }
             ++total;
         }
+
+        // Check if # unique value of latitude is larger than # unique value of
+        // lontitude
+        ModelData dataset;
+        bool sortByLat = true;
+        if (latCounter.size() < lonCounter.size())
+            sortByLat = false;
+
         // Sort data
-        std::sort(data.begin(), data.end());
-        return data;
+        std::sort(data.begin(), data.end(), less_than_key{sortByLat});
+        dataset = {data, sortByLat};
+
+        return dataset;
     }
 }; // namespace utils
 

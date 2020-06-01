@@ -4,7 +4,6 @@
 #include "KeyHash.h"
 #include <cstddef>
 
-
 template <typename K, typename V, size_t tableSize, typename F = KeyHash<K, tableSize>>
 class HashMap
 {

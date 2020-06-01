@@ -6,17 +6,18 @@
 #include "HashMap.h"
 // #include <tuple>
 
-void slr(const std::vector<DataItem> &data, long double *slope, long double *intercept)
+void slr(const ModelData &data, long double *slope, long double *intercept)
 {
     long double sum_x = 0;
     long double sum_y = 0;
     int n = 0;
+    std::vector<DataItem> dataset = data.list;
 
     // Calculate mean
-    for (int i = 0; i < data.size(); i++)
+    for (int i = 0; i < dataset.size(); i++)
     {
         n += 1;
-        long double x = data[i].lat;
+        long double x = dataset[i].lat;
         long double y = i;
         sum_x += x;
         sum_y += y;
@@ -28,10 +29,10 @@ void slr(const std::vector<DataItem> &data, long double *slope, long double *int
     long double cov_diff_sum = 0;
 
     // Calculate Covariance and variance
-    for (int j = 0; j < data.size(); j++)
+    for (int j = 0; j < dataset.size(); j++)
     {
-        long double x = data[j].lat;
-        long double y = data[j].lon;
+        long double x = dataset[j].lat;
+        long double y = j;
         long double x_diff = x - mean_x;
         long double y_diff = y - mean_y;
         sq_diff_sum += x_diff * x_diff;
@@ -73,24 +74,22 @@ struct MyKeyHash
 int main()
 {
     std::string filename = "test.txt";
-    std::vector<DataItem> data = utils::read_data(filename, true);
-    utils::log(data);
+    ModelData data = utils::read_data(filename, true);
     long double slope, intercept;
     slr(data, &slope, &intercept);
 
     std::vector<long double> test_x;
-    for (int i = 0; i < data.size(); i++)
-        test_x.push_back(data[i].lat);
-    std::vector<int> pred_result = predict_list(test_x, &slope, &intercept);
+    for (int i = 0; i < data.list.size(); i++)
+        test_x.push_back(data.list[i].lat);
 
-    for (int j = 0; j < data.size(); j++)
+    std::vector<int> pred_result = predict_list(test_x, &slope, &intercept);
+    for (int j = 0; j < data.list.size(); j++)
         std::cout << test_x[j] << " " << pred_result[j] << std::endl;
 
     HashMap<int, std::string, 10, MyKeyHash> hmap;
     hmap.put(1, "1");
     hmap.put(2, "2");
     hmap.put(3, "3");
-    std::cout << hmap << std::endl;
 
     std::string value;
     bool result = hmap.get(2, value);
