@@ -3,6 +3,7 @@
 #include "HashNode.h"
 #include "KeyHash.h"
 #include <cstddef>
+#include <iostream>
 
 template <typename K, typename V, size_t tableSize, typename F = KeyHash<K, tableSize>>
 class HashMap
@@ -38,14 +39,15 @@ public:
         }
     }
 
-    bool get(const K &key, V &value)
+    bool get(V &value)
     {
-        unsigned long hashValue = hashFunc(key);
+        unsigned long hashValue = hashFunc(value.lat);
+        std::cout << hashValue << std::endl;
         HashNode<K, V> *entry = table[hashValue];
 
         while (entry != NULL)
         {
-            if (entry->getKey() == key)
+            if (entry->getKey() == hashValue)
             {
                 value = entry->getValue();
                 return true;
@@ -57,13 +59,13 @@ public:
         return false;
     }
 
-    void put(const K &key, const V &value)
+    void put(const V &value)
     {
-        unsigned long hashValue = hashFunc(key);
+        unsigned long hashKey = hashFunc(value.lat);
         HashNode<K, V> *prev = NULL;
-        HashNode<K, V> *entry = table[hashValue];
+        HashNode<K, V> *entry = table[hashKey];
 
-        while (entry != NULL && entry->getKey() != key)
+        while (entry != NULL && entry->getKey() != hashKey)
         {
             prev = entry;
             entry = entry->getNext();
@@ -71,12 +73,12 @@ public:
 
         if (entry == NULL)
         {
-            entry = new HashNode<K, V>(key, value);
+            entry = new HashNode<K, V>(hashKey, value);
 
             if (prev == NULL)
             {
                 // insert as first bucket
-                table[hashValue] = entry;
+                table[hashKey] = entry;
             }
             else
             {

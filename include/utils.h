@@ -13,14 +13,6 @@
 struct DataItem
 {
     long double lat, lon;
-    // bool sortLat = true;
-    // bool operator<(const DataItem &item, bool sortLat) const
-    // {
-    //     if (sortLat)
-    //         return (lat < item.lat);
-    //     else
-    //         return (lon < item.lon);
-    // }
 };
 
 struct less_than_key
