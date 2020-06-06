@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.h"
+#include <vector>
 
 template <typename T>
 class Linear
@@ -19,18 +19,18 @@ public:
         return _intercept;
     }
 
-    void fit(const ModelData &data)
+    void fit(const std::vector<T> &train_x, const std::vector<T> &train_y)
     {
         T sum_x = 0;
         T sum_y = 0;
         int n = 0;
 
         // Calculate mean
-        for (int i = 0; i < data.list.size(); i++)
+        for (int i = 0; i < train_x.size(); i++)
         {
             n += 1;
-            T x = data.list[i].lat;
-            T y = i;
+            T x = train_x[i];
+            T y = train_y[i];
             sum_x += x;
             sum_y += y;
         }
@@ -41,10 +41,10 @@ public:
         T cov_diff_sum = 0;
 
         // Calculate Covariance and variance
-        for (int j = 0; j < data.list.size(); j++)
+        for (int j = 0; j < train_x.size(); j++)
         {
-            T x = data.list[j].lat;
-            T y = j;
+            T x = train_x[j];
+            T y = train_y[j];
             T x_diff = x - mean_x;
             T y_diff = y - mean_y;
             sq_diff_sum += x_diff * x_diff;

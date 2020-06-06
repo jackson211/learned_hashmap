@@ -3,46 +3,60 @@
 #include <assert.h>
 
 #include "HashMap.h"
+#include "KeyHash.h"
 #include "Linear.h"
+#include "utils.h"
 
-struct MyKeyHash
-{
-    long double w, b;
-    unsigned long operator()(const int &k) const
-    {
-        return w * k + b;
-    }
-};
+// struct LinearKeyHash
+// {
+//     long double w, b;
+//     unsigned long operator()(const int &k) const
+//     {
+//         return w * k + b;
+//     }
+// };
 
 int main()
 {
     // Read data
     std::string filename = "test.txt";
     ModelData data = utils::read_data(filename, true);
+    data.print();
 
-    Linear<long double> model;
-    model.fit(data);
+    std::vector<long double> train_lat;
+    std::vector<long double> train_lon;
+    std::vector<long double> train_y;
+    for (int i; i < data.size(); i++)
+    {
+        train_lat.push_back(data.list[i].lat);
+        train_lon.push_back(data.list[i].lon);
+        train_y.push_back(i);
+    }
 
-    // test set
-    std::vector<long double> test_x;
-    for (int i = 0; i < data.list.size(); i++)
-        test_x.push_back(data.list[i].lat);
+    // Train
+    Linear<long double> model_lat;
+    if (data.sortByLat)
+    {
+        model_lat.fit(train_lat, train_y);
+    }
 
     // prediction
-    std::vector<int> pred_result = model.predict_list<int>(test_x);
+    std::vector<int> pred_result = model_lat.predict_list<int>(train_lat);
     for (int j = 0; j < data.list.size(); j++)
-        std::cout << test_x[j] << " " << pred_result[j] << std::endl;
+        std::cout << train_lat[j] << " " << pred_result[j] << std::endl;
 
     // put into hashmap
-    long double w = model.getSlope();
-    long double b = model.getIntercept();
-    MyKeyHash kh = {w, b};
-    HashMap<int, DataItem, 10, MyKeyHash> hmap;
+    HashMap<int, 10> hmap(model_lat.getSlope(), model_lat.getIntercept());
     for (int j = 0; j < data.list.size(); j++)
+    {
+        std::cout << data.list[j].lat << " " << data.list[j].lon << std::endl;
         hmap.put(data.list[j]);
+    }
+
+    hmap.printHashMap();
 
     // retrieve result
-    DataItem value;
-    hmap.get(value);
-    std::cout << value.lat << value.lon << std::endl;
+    // DATAITEM value = data.list[0];
+    // hmap.get(value);
+    // std::cout << value.lat << value.lon << std::endl;
 }

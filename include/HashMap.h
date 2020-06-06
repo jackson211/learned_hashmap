@@ -2,23 +2,28 @@
 
 #include "HashNode.h"
 #include "KeyHash.h"
+#include "utils.h"
 #include <cstddef>
 #include <iostream>
 
-template <typename K, typename V, size_t tableSize, typename F = KeyHash<K, tableSize>>
+template <typename K, size_t tableSize>
 class HashMap
 {
 private:
     HashMap(const HashMap &other);
     const HashMap &operator=(const HashMap &other);
     // hash table
-    HashNode<K, V> *table[tableSize];
-    F hashFunc;
+    HashNode<K, DATAITEM> *table[tableSize];
+    // F hashFunc;
+
+    long double _w, _b;
 
 public:
-    HashMap() : table(),
-                hashFunc()
+    HashMap(long double w, long double b) : table()
+    // hashFunc()
     {
+        _w = w;
+        _b = b;
     }
 
     ~HashMap()
@@ -26,11 +31,11 @@ public:
         // destroy all buckets one by one
         for (size_t i = 0; i < tableSize; ++i)
         {
-            HashNode<K, V> *entry = table[i];
+            HashNode<K, DATAITEM> *entry = table[i];
 
             while (entry != NULL)
             {
-                HashNode<K, V> *prev = entry;
+                HashNode<K, DATAITEM> *prev = entry;
                 entry = entry->getNext();
                 delete prev;
             }
@@ -39,15 +44,20 @@ public:
         }
     }
 
-    bool get(V &value)
+    unsigned long hashFunc(int k)
     {
-        unsigned long hashValue = hashFunc(value.lat);
-        std::cout << hashValue << std::endl;
-        HashNode<K, V> *entry = table[hashValue];
+        return _w * k + _b;
+    }
+
+    bool get(DATAITEM &value)
+    {
+        unsigned long hashKey = hashFunc(value.lat);
+        std::cout << hashKey << std::endl;
+        HashNode<K, DATAITEM> *entry = table[hashKey];
 
         while (entry != NULL)
         {
-            if (entry->getKey() == hashValue)
+            if (entry->getKey() == hashKey)
             {
                 value = entry->getValue();
                 return true;
@@ -59,13 +69,14 @@ public:
         return false;
     }
 
-    void put(const V &value)
+    void put(const DATAITEM &value)
     {
         unsigned long hashKey = hashFunc(value.lat);
-        HashNode<K, V> *prev = NULL;
-        HashNode<K, V> *entry = table[hashKey];
+        std::cout << hashKey << std::endl;
+        HashNode<K, DATAITEM> *prev = NULL;
+        HashNode<K, DATAITEM> *entry = table[hashKey];
 
-        while (entry != NULL && entry->getKey() != hashKey)
+        while (entry != NULL)
         {
             prev = entry;
             entry = entry->getNext();
@@ -73,7 +84,7 @@ public:
 
         if (entry == NULL)
         {
-            entry = new HashNode<K, V>(hashKey, value);
+            entry = new HashNode<K, DATAITEM>(hashKey, value);
 
             if (prev == NULL)
             {
@@ -94,9 +105,9 @@ public:
 
     void remove(const K &key)
     {
-        unsigned long hashValue = hashFunc(key);
-        HashNode<K, V> *prev = NULL;
-        HashNode<K, V> *entry = table[hashValue];
+        unsigned long hashKey = hashFunc(key);
+        HashNode<K, DATAITEM> *prev = NULL;
+        HashNode<K, DATAITEM> *entry = table[hashKey];
 
         while (entry != NULL && entry->getKey() != key)
         {
@@ -114,7 +125,7 @@ public:
             if (prev == NULL)
             {
                 // remove first bucket of the list
-                table[hashValue] = entry->getNext();
+                table[hashKey] = entry->getNext();
             }
             else
             {
@@ -122,6 +133,23 @@ public:
             }
 
             delete entry;
+        }
+    }
+
+    void printHashMap()
+    {
+        std::cout << "Hash Map" << std::endl;
+        for (size_t i = 0; i < tableSize; ++i)
+        {
+            HashNode<K, DATAITEM> *entry = table[i];
+            while (entry != NULL)
+            {
+                DATAITEM item = entry->getValue();
+                K key = entry->getKey();
+                std::cout << "Key: " << key << std::endl;
+                std::cout << "Item: " << item.lat << item.lon << std::endl;
+                entry = entry->getNext();
+            }
         }
     }
 };

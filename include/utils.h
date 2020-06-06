@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef UTILS_H
 #define UTILS_H
 
@@ -10,15 +12,16 @@
 #include <iostream>
 #include <limits>
 
-struct DataItem
+struct DATAITEM
 {
     long double lat, lon;
+    int id = -1; //default value: -1
 };
 
 struct less_than_key
 {
     bool sortByLat = true;
-    inline bool operator()(const DataItem &d1, const DataItem &d2)
+    inline bool operator()(const DATAITEM &d1, const DATAITEM &d2)
     {
         if (sortByLat)
             return (d1.lat < d2.lat);
@@ -27,19 +30,35 @@ struct less_than_key
     }
 };
 
-struct ModelData
+class ModelData
 {
-    std::vector<DataItem> list;
+public:
+    std::vector<DATAITEM> list;
     bool sortByLat = true;
+    int size()
+    {
+        return list.size();
+    }
+    void print()
+    {
+        for (int i = 0; i < list.size(); i++)
+            std::cout << list[i].id << " " << list[i].lat << " " << list[i].lon << std::endl;
+    }
 };
 
 namespace utils
 {
+    void reset_id(ModelData &data)
+    {
+        for (int i = 0; i < data.list.size(); i++)
+            data.list[i].id = i;
+    }
+
     ModelData read_data(std ::string const filename, bool sortLat)
     {
         std::fstream in(filename);
         std::string line;
-        std::vector<DataItem> data;
+        std::vector<DATAITEM> data;
         std::set<long double> latCounter;
         std::set<long double> lonCounter;
 
@@ -52,7 +71,7 @@ namespace utils
 
             while (ss >> lat >> lon)
             {
-                DataItem item = {lat, lon};
+                DATAITEM item = {lat, lon};
                 data.push_back(item);
                 latCounter.insert(lat);
                 lonCounter.insert(lat);
@@ -70,9 +89,11 @@ namespace utils
         // Sort data
         std::sort(data.begin(), data.end(), less_than_key{sortByLat});
         dataset = {data, sortByLat};
+        reset_id(dataset);
 
         return dataset;
     }
+
 }; // namespace utils
 
 #endif

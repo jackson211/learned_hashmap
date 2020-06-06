@@ -8,3 +8,13 @@ struct KeyHash
         return reinterpret_cast<unsigned long>(key) % tableSize;
     }
 };
+
+// template <typename K>
+// struct KeyHash
+// {
+//     long double w, b;
+//     unsigned long operator()(const K &k) const
+//     {
+//         return w * k + b;
+//     }
+// };
