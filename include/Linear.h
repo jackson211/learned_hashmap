@@ -56,7 +56,7 @@ public:
         // Get the slope and intercept
         _slope = cov / var;
         _intercept = mean_y - mean_x * _slope;
-        std::cout << "slope: " << _slope << ", intercept: " << _intercept << std::endl;
+        std::cout << "Slope: " << _slope << ", Intercept: " << _intercept << std::endl;
     }
 
     T predict(T x)

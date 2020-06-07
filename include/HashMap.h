@@ -1,7 +1,6 @@
 #pragma once
 
 #include "HashNode.h"
-#include "KeyHash.h"
 #include "utils.h"
 #include <cstddef>
 #include <iostream>
@@ -14,13 +13,10 @@ private:
     const HashMap &operator=(const HashMap &other);
     // hash table
     HashNode<K, DATAITEM> *table[tableSize];
-    // F hashFunc;
-
     long double _w, _b;
 
 public:
     HashMap(long double w, long double b) : table()
-    // hashFunc()
     {
         _w = w;
         _b = b;
@@ -44,25 +40,26 @@ public:
         }
     }
 
-    unsigned long hashFunc(int k)
+    unsigned long hashFunc(K k)
     {
         return _w * k + _b;
     }
 
-    bool get(DATAITEM &value)
+    bool get(long double lat, long double lon, DATAITEM &value)
     {
-        unsigned long hashKey = hashFunc(value.lat);
-        std::cout << hashKey << std::endl;
+        unsigned long hashKey = hashFunc(lat);
         HashNode<K, DATAITEM> *entry = table[hashKey];
 
         while (entry != NULL)
         {
-            if (entry->getKey() == hashKey)
+            if (entry->getValue().lon == lon)
             {
-                value = entry->getValue();
-                return true;
+                if (entry->getValue().lat == lat)
+                {
+                    value = entry->getValue();
+                    return true;
+                }
             }
-
             entry = entry->getNext();
         }
 
@@ -72,7 +69,6 @@ public:
     void put(const DATAITEM &value)
     {
         unsigned long hashKey = hashFunc(value.lat);
-        std::cout << hashKey << std::endl;
         HashNode<K, DATAITEM> *prev = NULL;
         HashNode<K, DATAITEM> *entry = table[hashKey];
 
@@ -138,18 +134,28 @@ public:
 
     void printHashMap()
     {
-        std::cout << "Hash Map" << std::endl;
+        std::cout << "{" << std::endl;
         for (size_t i = 0; i < tableSize; ++i)
         {
             HashNode<K, DATAITEM> *entry = table[i];
-            while (entry != NULL)
+            bool isFirst = true;
+            if (entry != NULL)
             {
-                DATAITEM item = entry->getValue();
-                K key = entry->getKey();
-                std::cout << "Key: " << key << std::endl;
-                std::cout << "Item: " << item.lat << item.lon << std::endl;
-                entry = entry->getNext();
+                while (entry != NULL)
+                {
+                    if (isFirst)
+                    {
+                        K key = entry->getKey();
+                        std::cout << key << ": ";
+                        isFirst = false;
+                    }
+                    DATAITEM item = entry->getValue();
+                    std::cout << "(" << item.id << "," << item.lat << "," << item.lon << ") -> ";
+                    entry = entry->getNext();
+                }
+                std::cout << std::endl;
             }
         }
+        std::cout << "}" << std::endl;
     }
 };

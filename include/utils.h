@@ -16,6 +16,10 @@ struct DATAITEM
 {
     long double lat, lon;
     int id = -1; //default value: -1
+    bool isEqual(const DATAITEM &d) const
+    {
+        return (id == d.id) && (lat == d.lat) && (lon == d.lon);
+    }
 };
 
 struct less_than_key
