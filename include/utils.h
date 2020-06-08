@@ -12,11 +12,11 @@
 #include <iostream>
 #include <limits>
 
-struct DATAITEM
+struct Coord
 {
     long double lat, lon;
     int id = -1; //default value: -1
-    bool isEqual(const DATAITEM &d) const
+    bool isEqual(const Coord &d) const
     {
         return (id == d.id) && (lat == d.lat) && (lon == d.lon);
     }
@@ -25,7 +25,7 @@ struct DATAITEM
 struct less_than_key
 {
     bool sortByLat = true;
-    inline bool operator()(const DATAITEM &d1, const DATAITEM &d2)
+    inline bool operator()(const Coord &d1, const Coord &d2)
     {
         if (sortByLat)
             return (d1.lat < d2.lat);
@@ -37,7 +37,7 @@ struct less_than_key
 class ModelData
 {
 public:
-    std::vector<DATAITEM> list;
+    std::vector<Coord> list;
     bool sortByLat = true;
     int size()
     {
@@ -62,7 +62,7 @@ namespace utils
     {
         std::fstream in(filename);
         std::string line;
-        std::vector<DATAITEM> data;
+        std::vector<Coord> data;
         std::set<long double> latCounter;
         std::set<long double> lonCounter;
 
@@ -75,7 +75,7 @@ namespace utils
 
             while (ss >> lat >> lon)
             {
-                DATAITEM item = {lat, lon};
+                Coord item = {lat, lon};
                 data.push_back(item);
                 latCounter.insert(lat);
                 lonCounter.insert(lat);

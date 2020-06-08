@@ -1,25 +1,28 @@
 #pragma once
 
+#ifndef HASHMAP_H
+#define HASHMAP_H
+
 #include "HashNode.h"
+// #include "KeyHash.h"
 #include "utils.h"
 #include <cstddef>
 #include <iostream>
 
-template <typename K, size_t tableSize>
+template <typename K, size_t tableSize, typename F>
 class HashMap
 {
 private:
     HashMap(const HashMap &other);
     const HashMap &operator=(const HashMap &other);
     // hash table
-    HashNode<K, DATAITEM> *table[tableSize];
+    HashNode<K, Coord> *table[tableSize];
     long double _w, _b;
+    F hashFunc;
 
 public:
-    HashMap(long double w, long double b) : table()
+    HashMap(long double w, long double b) : table(), _w(w), _b(b), hashFunc()
     {
-        _w = w;
-        _b = b;
     }
 
     ~HashMap()
@@ -27,11 +30,11 @@ public:
         // destroy all buckets one by one
         for (size_t i = 0; i < tableSize; ++i)
         {
-            HashNode<K, DATAITEM> *entry = table[i];
+            HashNode<K, Coord> *entry = table[i];
 
             while (entry != NULL)
             {
-                HashNode<K, DATAITEM> *prev = entry;
+                HashNode<K, Coord> *prev = entry;
                 entry = entry->getNext();
                 delete prev;
             }
@@ -40,15 +43,10 @@ public:
         }
     }
 
-    unsigned long hashFunc(K k)
+    bool get(long double lat, long double lon, Coord &value)
     {
-        return _w * k + _b;
-    }
-
-    bool get(long double lat, long double lon, DATAITEM &value)
-    {
-        unsigned long hashKey = hashFunc(lat);
-        HashNode<K, DATAITEM> *entry = table[hashKey];
+        unsigned long hashKey = hashFunc(lat, _w, _b);
+        HashNode<K, Coord> *entry = table[hashKey];
 
         while (entry != NULL)
         {
@@ -66,11 +64,11 @@ public:
         return false;
     }
 
-    void put(const DATAITEM &value)
+    void put(const Coord &value)
     {
-        unsigned long hashKey = hashFunc(value.lat);
-        HashNode<K, DATAITEM> *prev = NULL;
-        HashNode<K, DATAITEM> *entry = table[hashKey];
+        unsigned long hashKey = hashFunc(value.lat, _w, _b);
+        HashNode<K, Coord> *prev = NULL;
+        HashNode<K, Coord> *entry = table[hashKey];
 
         while (entry != NULL)
         {
@@ -80,7 +78,7 @@ public:
 
         if (entry == NULL)
         {
-            entry = new HashNode<K, DATAITEM>(hashKey, value);
+            entry = new HashNode<K, Coord>(hashKey, value);
 
             if (prev == NULL)
             {
@@ -101,9 +99,9 @@ public:
 
     void remove(const K &key)
     {
-        unsigned long hashKey = hashFunc(key);
-        HashNode<K, DATAITEM> *prev = NULL;
-        HashNode<K, DATAITEM> *entry = table[hashKey];
+        unsigned long hashKey = hashFunc(key, _w, _b);
+        HashNode<K, Coord> *prev = NULL;
+        HashNode<K, Coord> *entry = table[hashKey];
 
         while (entry != NULL && entry->getKey() != key)
         {
@@ -137,7 +135,7 @@ public:
         std::cout << "{" << std::endl;
         for (size_t i = 0; i < tableSize; ++i)
         {
-            HashNode<K, DATAITEM> *entry = table[i];
+            HashNode<K, Coord> *entry = table[i];
             bool isFirst = true;
             if (entry != NULL)
             {
@@ -149,7 +147,7 @@ public:
                         std::cout << key << ": ";
                         isFirst = false;
                     }
-                    DATAITEM item = entry->getValue();
+                    Coord item = entry->getValue();
                     std::cout << "(" << item.id << "," << item.lat << "," << item.lon << ") -> ";
                     entry = entry->getNext();
                 }
@@ -159,3 +157,5 @@ public:
         std::cout << "}" << std::endl;
     }
 };
+
+#endif

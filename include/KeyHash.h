@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef KEYHASH_H
+#define KEYHASH_H
+
 template <typename K, size_t tableSize>
 struct KeyHash
 {
@@ -9,12 +12,4 @@ struct KeyHash
     }
 };
 
-// template <typename K>
-// struct KeyHash
-// {
-//     long double w, b;
-//     unsigned long operator()(const K &k) const
-//     {
-//         return w * k + b;
-//     }
-// };
+#endif

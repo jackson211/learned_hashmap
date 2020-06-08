@@ -10,6 +10,7 @@
 #include "Linear.h"
 #include "utils.h"
 
+
 size_t getHashMapSize(std::vector<int> &list)
 {
     std::set<int> counter;
@@ -69,7 +70,7 @@ int main()
     countFreq(pred_result);
 
     // put into hashmap
-    HashMap<long, 100> hmap(model.getSlope(), model.getIntercept() - MIN_PRED_VALUE);
+    HashMap<long, 100, LinearKeyHash> hmap(model.getSlope(), model.getIntercept() - MIN_PRED_VALUE);
     for (int j = 0; j < data.list.size(); j++)
     {
         hmap.put(data.list[j]);
@@ -81,7 +82,7 @@ int main()
     std::vector<long double> test;
     for (int k = 0; k < data.list.size(); k++)
     {
-        DATAITEM value = data.list[k];
+        Coord value = data.list[k];
         test.push_back(value.lat);
         test.push_back(value.lon);
     }
@@ -91,7 +92,7 @@ int main()
 
     for (int k = 0; k < test.size(); k += 2)
     {
-        DATAITEM testValue;
+        Coord testValue;
         hmap.get(test[k], test[k + 1], testValue);
         assert(testValue.isEqual(data.list[k / 2]));
     }

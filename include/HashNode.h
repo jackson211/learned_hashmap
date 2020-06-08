@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef HASHNODE_H
+#define HASHNODE_H
+
 #include <cstddef>
 
 // Hash node class template
@@ -17,6 +20,7 @@ private:
     HashNode &operator=(const HashNode &);
 
 public:
+    HashNode();
     HashNode(const K &key, const V &value) : _key(key), _value(value), _next(NULL)
     {
     }
@@ -46,3 +50,5 @@ public:
         _next = next;
     }
 };
+
+#endif

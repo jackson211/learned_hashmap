@@ -1,6 +1,17 @@
 #pragma once
 
+#ifndef LINEAR_H
+#define LINEAR_H
+
 #include <vector>
+
+struct LinearKeyHash
+{
+    unsigned long operator()(const int &k, const long double &w, const long double &b) const
+    {
+        return w * k + b;
+    }
+};
 
 template <typename T>
 class Linear
@@ -76,3 +87,5 @@ public:
         return result;
     }
 };
+
+#endif
