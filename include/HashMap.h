@@ -4,12 +4,11 @@
 #define HASHMAP_H
 
 #include "HashNode.h"
-// #include "KeyHash.h"
 #include "utils.h"
 #include <cstddef>
 #include <iostream>
 
-template <typename K, size_t tableSize, typename F>
+template <typename K, size_t tableSize, typename M>
 class HashMap
 {
 private:
@@ -17,11 +16,13 @@ private:
     const HashMap &operator=(const HashMap &other);
     // hash table
     HashNode<K, Coord> *table[tableSize];
-    long double _w, _b;
-    F hashFunc;
+    ModelData _data;
+    M _model;
+    const int _MIN_PRED_VALUE;
 
 public:
-    HashMap(long double w, long double b) : table(), _w(w), _b(b), hashFunc()
+    HashMap(ModelData &data, M &model, const int &MIN_PRED_VALUE) : table(), _data(data),
+                                                                    _model(model), _MIN_PRED_VALUE(MIN_PRED_VALUE)
     {
     }
 
@@ -43,9 +44,14 @@ public:
         }
     }
 
+    unsigned long hash_key(long double value)
+    {
+        return _model.predict(value) - _MIN_PRED_VALUE;
+    }
+
     bool get(long double lat, long double lon, Coord &value)
     {
-        unsigned long hashKey = hashFunc(lat, _w, _b);
+        unsigned long hashKey = hash_key(lat);
         HashNode<K, Coord> *entry = table[hashKey];
 
         while (entry != NULL)
@@ -66,7 +72,7 @@ public:
 
     void put(const Coord &value)
     {
-        unsigned long hashKey = hashFunc(value.lat, _w, _b);
+        unsigned long hashKey = hash_key(value.lat);
         HashNode<K, Coord> *prev = NULL;
         HashNode<K, Coord> *entry = table[hashKey];
 
@@ -97,9 +103,29 @@ public:
         }
     }
 
+    void test(std::vector<long double> &test_set)
+    {
+        int count = 0;
+        auto start = std::chrono::high_resolution_clock::now();
+        for (int k = 0; k < test_set.size(); k += 2)
+        {
+            Coord testValue;
+            get(test_set[k], test_set[k + 1], testValue);
+            assert(testValue.isEqual(_data.list[k / 2]));
+            count++;
+        }
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+        std::cout << "Total look up time : "
+                  << duration.count() << " nanoseconds" << std::endl;
+        std::cout << "Average look up time : "
+                  << duration.count() / (test_set.size() / 2) << " nanoseconds" << std::endl;
+        std::cout << "Correct item found: " << count << std::endl;
+    }
+
     void remove(const K &key)
     {
-        unsigned long hashKey = hashFunc(key, _w, _b);
+        unsigned long hashKey = hash_key(key);
         HashNode<K, Coord> *prev = NULL;
         HashNode<K, Coord> *entry = table[hashKey];
 

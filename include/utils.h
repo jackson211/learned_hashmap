@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <chrono>
 
 struct Coord
 {
@@ -98,6 +99,20 @@ namespace utils
         return dataset;
     }
 
+    // typedef void (*vFunctionCall)(std::vector<long double> args);
+    template <typename F, typename... Args>
+    auto timing(F func, Args &&... args)
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        func(std::forward<Args>(args)...);
+
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+        std::cout << "Total look up time : "
+                  << duration.count() << " nanoseconds" << std::endl;
+        return duration.count;
+    }
 }; // namespace utils
 
 #endif

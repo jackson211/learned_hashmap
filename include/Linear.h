@@ -70,6 +70,7 @@ public:
         std::cout << "Slope: " << _slope << ", Intercept: " << _intercept << std::endl;
     }
 
+    // template <typename V>
     T predict(T x)
     {
         return x * _slope + _intercept;
@@ -79,10 +80,9 @@ public:
     std::vector<V> predict_list(std::vector<T> test_x)
     {
         std::vector<V> result;
-        for (int i = 0; i < test_x.size(); i++)
+        for (size_t i = 0; i < test_x.size(); i++)
         {
-            V pred_y = predict(test_x[i]);
-            result.push_back(pred_y);
+            result.push_back(predict(test_x[i]));
         }
         return result;
     }
