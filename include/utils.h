@@ -3,116 +3,67 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <set>
-#include <vector>
-#include <string>
-#include <sstream>
+#include "entry.h"
 #include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <limits>
-#include <chrono>
+#include <set>
+#include <sstream>
+#include <string>
+#include <vector>
 
-struct Coord
-{
-    long double lat, lon;
-    int id = -1; //default value: -1
-    bool isEqual(const Coord &d) const
-    {
-        return (id == d.id) && (lat == d.lat) && (lon == d.lon);
-    }
+namespace utils {
+auto compare_lat = [](Entry *const &lhs, Entry *const &rhs) -> bool {
+  return lhs->getLat() < rhs->getLat();
 };
 
-struct less_than_key
-{
-    bool sortByLat = true;
-    inline bool operator()(const Coord &d1, const Coord &d2)
-    {
-        if (sortByLat)
-            return (d1.lat < d2.lat);
-        else
-            return (d1.lon < d2.lon);
-    }
+auto compare_lon = [](Entry *const &lhs, Entry *const &rhs) -> bool {
+  return lhs->getLon() < rhs->getLon();
 };
 
-class ModelData
-{
-public:
-    std::vector<Coord> list;
-    bool sortByLat = true;
-    int size()
-    {
-        return list.size();
+void reset_id(std::vector<Entry *> *data) {
+  for (size_t i = 0; i < data->size(); i++) {
+    id_type id = i;
+    data->at(i)->setId(id);
+  }
+}
+
+template <typename T>
+bool read_data(std ::string const &filename, std::vector<Entry *> *data) {
+  std::fstream in(filename);
+  std::string line;
+  // std::vector<Entry *> data;
+  std::set<T> lat_counter;
+  std::set<T> lon_counter;
+
+  int total = 0;
+  while (std::getline(in, line)) {
+    T lat;
+    T lon;
+    std::stringstream ss(line);
+
+    while (ss >> lat >> lon) {
+      Entry *item = new Entry(lat, lon);
+      data->push_back(item);
+      lat_counter.insert(lat);
+      lon_counter.insert(lat);
     }
-    void print()
-    {
-        for (int i = 0; i < list.size(); i++)
-            std::cout << list[i].id << " " << list[i].lat << " " << list[i].lon << std::endl;
-    }
-};
+    ++total;
+  }
 
-namespace utils
-{
-    void reset_id(ModelData &data)
-    {
-        for (int i = 0; i < data.list.size(); i++)
-            data.list[i].id = i;
-    }
+  // Check if # unique value of latitude is larger than # unique value of
+  // lontitude
+  bool sort_by_lat = (lat_counter.size() >= lon_counter.size()) ? true : false;
 
-    ModelData read_data(std ::string const filename, bool sortLat)
-    {
-        std::fstream in(filename);
-        std::string line;
-        std::vector<Coord> data;
-        std::set<long double> latCounter;
-        std::set<long double> lonCounter;
+  // Sort data
+  if (sort_by_lat)
+    std::sort(data->begin(), data->end(), compare_lat);
+  else
+    std::sort(data->begin(), data->end(), compare_lon);
 
-        int total = 0;
-        while (std::getline(in, line))
-        {
-            long double lat;
-            long double lon;
-            std::stringstream ss(line);
+  reset_id(data);
 
-            while (ss >> lat >> lon)
-            {
-                Coord item = {lat, lon};
-                data.push_back(item);
-                latCounter.insert(lat);
-                lonCounter.insert(lat);
-            }
-            ++total;
-        }
+  return sort_by_lat;
+}
 
-        // Check if # unique value of latitude is larger than # unique value of
-        // lontitude
-        ModelData dataset;
-        bool sortByLat = true;
-        if (latCounter.size() < lonCounter.size())
-            sortByLat = false;
-
-        // Sort data
-        std::sort(data.begin(), data.end(), less_than_key{sortByLat});
-        dataset = {data, sortByLat};
-        reset_id(dataset);
-
-        return dataset;
-    }
-
-    // typedef void (*vFunctionCall)(std::vector<long double> args);
-    template <typename F, typename... Args>
-    auto timing(F func, Args &&... args)
-    {
-        auto start = std::chrono::high_resolution_clock::now();
-
-        func(std::forward<Args>(args)...);
-
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-        std::cout << "Total look up time : "
-                  << duration.count() << " nanoseconds" << std::endl;
-        return duration.count;
-    }
 }; // namespace utils
 
 #endif
