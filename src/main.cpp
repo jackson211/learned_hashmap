@@ -18,35 +18,6 @@ typedef std::vector<long double> DataType;
 typedef model::Linear<long double> LinearModel;
 typedef model::Piecewise<long double> PiecewiseModel;
 
-// Build indexes map
-// std::unordered_map<int, std::vector<Entry>> index_map =
-//     learned_index::build_index_map(pred_result, data);
-
-// std::vector<int> indexes_lookup_result =
-//     learned_index::look_up<LinearModel>(lm, index_map, test_set);
-
-// std::cout << "Indexes Map look up result size: "
-//           << indexes_lookup_result.size() << "\n"
-//           << "True label size: " << true_y.size() << std::endl;
-
-// int correct = 0;
-// for (i = 0; i < indexes_lookup_result.size(); i++) {
-//   if (indexes_lookup_result[i] == true_y[i])
-//     correct++;
-// }
-
-// // Print result
-// // learned_index::print_index_map<std::unordered_map<int,
-// // std::vector<Entry>>>(
-// //   index_map);
-
-// std::cout << "Correct: " << correct << std::endl;
-// std::cout << "Number of test label: " << indexes_lookup_result.size()
-//           << std::endl;
-// std::cout << "Number of true label: " << true_y.size() << std::endl;
-// std::cout << "Correctness: " << correct / (double)true_y.size() * 100.0
-//           << "% " << std::endl;
-
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
@@ -60,7 +31,6 @@ int main(int argc, char *argv[]) {
     std::cout << "Error reading " << filename << std::endl;
     exit(1);
   };
-  std::cout << "Reading from " << filename << std::endl;
 
   // Reading data from file
   std::vector<Entry> data;
@@ -108,7 +78,7 @@ int main(int argc, char *argv[]) {
   const int MIN_PRED_VALUE =
       *std::min_element(pred_result.begin(), pred_result.end());
   std::cout << "Max: " << MAX_PRED_VALUE << ", Min: " << MIN_PRED_VALUE
-            << std::endl;
+            << ", Max-Min: " << MAX_PRED_VALUE - MIN_PRED_VALUE << std::endl;
 
   // Build test set
   DataType test_set;
@@ -121,9 +91,12 @@ int main(int argc, char *argv[]) {
 
   // HashMap
   std::cout << "Building HashMap..." << std::endl;
-  HashMap<int, LinearModel> hm(lm, data.size(), sort_by_lat, MIN_PRED_VALUE);
+  HashMap<int, LinearModel> hm(lm, MAX_PRED_VALUE - MIN_PRED_VALUE + 1,
+                               sort_by_lat, MIN_PRED_VALUE);
   for (i = 0; i < data.size(); i++)
     hm.insertNode(data[i]);
+  std::cout << "Inserted all nodes into HashMap" << std::endl;
+  // hm.display();
 
   std::vector<Entry> lookup_results;
   int found_count = 0;

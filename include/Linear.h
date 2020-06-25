@@ -61,12 +61,14 @@ public:
 
   void fit(const std::vector<T> &train_x, const std::vector<T> &train_y) {
     linear_fn<T>(train_x, train_y, &_slope, &_intercept);
+    _intercept += 0.5f; // Round to nearest int - Precalculate
     std::cout << "Slope: " << _slope << ", Intercept: " << _intercept
               << std::endl;
   }
 
   template <typename V = int> V predict(T x) {
-    return x * _slope + _intercept + 0.5 - (x < 0); // Round to nearest int
+    // Round to nearest int, (x < 0) to check if x is negative or not
+    return x * _slope + _intercept - (x < 0);
   }
 
   template <typename V = int>

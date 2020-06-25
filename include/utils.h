@@ -19,10 +19,6 @@
 
 namespace utils {
 
-auto compare_entry = [](Entry const &lhs, Entry const &rhs) -> bool {
-  return lhs.lon == rhs.lon && lhs.lat == rhs.lat;
-};
-
 void reset_id(std::vector<Entry> *data) {
   for (size_t i = 0; i < data->size(); i++) {
     id_type id = i;
@@ -44,6 +40,7 @@ template <typename T> void rm_repeat(std::vector<Entry *> *data) {
 
 template <typename T>
 bool read_data(std ::string const &filename, std::vector<Entry> *data) {
+  std::cout << "Reading from " << filename << std::endl;
   std::fstream in(filename);
   std::string line;
   std::set<T> lat_counter;
