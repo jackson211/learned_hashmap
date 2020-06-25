@@ -3,8 +3,8 @@ project(LearnedHashMap LANGUAGES CXX)
 
 
 set (CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -ggdb")
+set(CMAKE_CXX_COMPILER "g++-9")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -std=c++17 -ggdb")
 
 
 ############################################################
@@ -12,13 +12,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -ggdb")
 ############################################################
 
 #Generate the static library from the library sources
-add_library(lib SHARED
-    "src/entry.cpp"
-)
+## add_library(lib SHARED
+##     "src/entry.cpp"
+## )
 
-target_include_directories(lib PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
-)
+## target_include_directories(lib PUBLIC
+##     ${PROJECT_SOURCE_DIR}/include
+## )
 
 ############################################################
 # Create an executable
@@ -32,6 +32,9 @@ add_executable(main
 # link the new hello_library target with the hello_binary target
 target_link_libraries( main
     PRIVATE
-        lib
+    #        lib
 )
 
+target_include_directories(main PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+)

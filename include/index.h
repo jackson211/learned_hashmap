@@ -4,6 +4,7 @@
 #define INDEX_H
 
 #include "entry.h"
+#include <iostream>
 #include <unordered_map>
 #include <vector>
 
@@ -29,29 +30,30 @@ std::unordered_map<T, int> countFreq(std::vector<T> &list) {
   return mp;
 }
 
-std::unordered_map<int, std::vector<Entry *>>
-build_index_map(std::vector<int> &input, std::vector<Entry *> &data) {
+std::unordered_map<int, std::vector<Entry>>
+build_index_map(std::vector<int> &input, std::vector<Entry> &data) {
   std::cout << "Build index map..." << std::endl;
-  std::unordered_map<int, std::vector<Entry *>> index_map;
+  std::unordered_map<int, std::vector<Entry>> index_map;
   for (size_t i = 0; i < input.size(); i++) {
     index_map[input[i]].push_back(data[i]);
   }
-
-  for (auto &item : index_map) {
-    std::cout << item.first << " -> ";
-    for (auto &i : item.second) {
-      std::cout << i->getId() << " ";
-    }
-    std::cout << std::endl;
-  }
-
   return index_map;
 }
 
+template <typename T> void print_index_map(T &index_map) {
+  for (auto &item : index_map) {
+    std::cout << item.first << " -> ";
+    for (auto &i : item.second) {
+      std::cout << i.id << " ";
+    }
+    std::cout << std::endl;
+  }
+}
+
 template <typename Model, typename PredicateType = int>
-std::vector<int>
-look_up(Model &model, std::unordered_map<int, std::vector<Entry *>> &index_map,
-        std::vector<long double> &test_set) {
+std::vector<int> look_up(Model &model,
+                         std::unordered_map<int, std::vector<Entry>> &index_map,
+                         std::vector<long double> &test_set) {
 
   std::cout << "Look up for test set..." << std::endl;
   std::vector<int> test_result;
@@ -65,9 +67,10 @@ look_up(Model &model, std::unordered_map<int, std::vector<Entry *>> &index_map,
     int index = model.template predict<PredicateType>(test_lat);
     int found = -1; // -1: not found
     for (auto &i : index_map[index]) {
-      if (i->getLon() == test_lon) {
-        if (i->getLat() == test_lat) {
-          found = i->getId();
+      if (i.lon == test_lon) {
+        if (i.lat == test_lat) {
+          found = i.id;
+          break;
         }
       }
     }

@@ -3,156 +3,172 @@
 #ifndef HASHMAP_H
 #define HASHMAP_H
 
-#include "HashNode.h"
+// #include "HashNode.h"
+#include "entry.h"
 #include <cstddef>
 #include <iostream>
 
-template <typename K, size_t tableSize, typename M> class HashMap {
+#include <cstddef>
+
+// Hash node class template
+template <typename K, typename V> class HashNode {
 private:
-  HashMap(const HashMap &other);
-  const HashMap &operator=(const HashMap &other);
-  // hash table
-  // HashNode<K, Coord> *table[tableSize];
-  std::vector<HashNode<K, Coord>> *table;
-  ModelData _data;
-  M _model;
-  const int _MIN_PRED_VALUE;
+  K _key;
+  V _value;
+  HashNode *_next;
+  HashNode(const HashNode &);
+  HashNode &operator=(const HashNode &);
 
 public:
-  HashMap(ModelData &data, M &model, const int &MIN_PRED_VALUE)
-      : table(), _data(data), _model(model), _MIN_PRED_VALUE(MIN_PRED_VALUE) {}
+  HashNode();
+  HashNode(const K &key, const V &value)
+      : _key(key), _value(value), _next(NULL) {}
 
-  // ~HashMap()
-  // {
-  //     // destroy all buckets one by one
-  //     for (size_t i = 0; i < tableSize; ++i)
-  //     {
-  //         HashNode<K, Coord> *entry = table->at(i);
+  K getKey() const { return _key; }
 
-  //         while (entry != NULL)
-  //         {
-  //             HashNode<K, Coord> *prev = entry;
-  //             entry = entry->getNext();
-  //             delete prev;
-  //         }
+  V getValue() const { return _value; }
 
-  //         table[i] = NULL;
-  //     }
-  // }
+  void setValue(V value) { _value = value; }
 
-  unsigned long hash_key(long double value) {
-    return _model.predict(value) - _MIN_PRED_VALUE;
+  HashNode *getNext() const { return _next; }
+
+  void setNext(HashNode *next) { _next = next; }
+};
+
+// HashMap class
+template <typename K, typename ModelType> class HashMap {
+private:
+  HashNode<K, Entry> **table;
+  size_t Capacity;
+  ModelType _model;
+  bool sort_by_lat;
+  const int MIN;
+  HashMap(const HashMap &other);
+  const HashMap &operator=(const HashMap &other);
+
+public:
+  HashMap(ModelType &model, size_t c, bool &sort_order,
+          const int MIN_PRED_VALUE)
+      : table(), Capacity(c), _model(model), sort_by_lat(sort_order),
+        MIN(MIN_PRED_VALUE) {
+    table = new HashNode<K, Entry> *[Capacity];
+    for (int i = 0; i < Capacity; i++)
+      table[i] = NULL;
   }
 
-  HashNode<K, Coord> *get_node(const long double &value) {
-    return &table->at(hash_key(value));
+  ~HashMap() {
+    // destroy all buckets one by one
+    for (size_t i = 0; i < Capacity; ++i) {
+      HashNode<K, Entry> *entry = table[i];
+
+      while (entry != NULL) {
+        HashNode<K, Entry> *prev = entry;
+        entry = entry->getNext();
+        delete prev;
+      }
+
+      table[i] = NULL;
+    }
   }
 
-  bool get(const long double lat, const long double lon, Coord &value) {
-    // unsigned long hashKey = hash_key(lat);
-    HashNode<K, Coord> *entry = get_node(lat);
+  unsigned long hash_function(long double value) {
+    return _model.template predict<unsigned long>(value) - MIN;
+  }
 
-    while (entry != NULL) {
-      if (entry->getValue().lon == lon) {
-        if (entry->getValue().lat == lat) {
-          value = entry->getValue();
+  void insertNode(const Entry &entry) {
+    long double input = sort_by_lat ? entry.lat : entry.lon;
+    unsigned long hashKey = hash_function(input);
+    HashNode<K, Entry> *prev = NULL;
+    HashNode<K, Entry> *temp = table[hashKey];
+
+    while (temp != NULL) {
+      prev = temp;
+      temp = temp->getNext();
+    }
+
+    if (temp == NULL) {
+      temp = new HashNode<K, Entry>(hashKey, entry);
+      if (prev == NULL) {
+        // insert as first bucket
+        table[hashKey] = temp;
+      } else {
+        prev->setNext(temp);
+      }
+    } else {
+      // just update the value
+      temp->setValue(entry);
+    }
+  }
+
+  bool getNode(const long double lat, const long double lon, Entry &value) {
+    long double input = sort_by_lat ? lat : lon;
+    unsigned long hashKey = hash_function(input);
+    HashNode<K, Entry> *temp = table[hashKey];
+
+    while (temp != NULL) {
+      if (temp->getValue().lon == lon) {
+        if (temp->getValue().lat == lat) {
+          value = temp->getValue();
           return true;
         }
       }
-      entry = entry->getNext();
+      temp = temp->getNext();
     }
 
     return false;
   }
 
-  void put(const Coord &value) {
-    unsigned long hashKey = hash_key(value.lat);
-    HashNode<K, Coord> *prev = NULL;
-    // HashNode<K, Coord> *entry = table[hashKey];
-
-    HashNode<K, Coord> *entry = get_node(value.lat);
-
-    while (entry != NULL) {
-      prev = entry;
-      entry = entry->getNext();
-    }
-
-    if (entry == NULL) {
-      entry = new HashNode<K, Coord>(hashKey, value);
-
-      if (prev == NULL) {
-        // insert as first bucket
-        table->at(hashKey) = *entry;
-      } else {
-        prev->setNext(entry);
-      }
-    } else {
-      // just update the value
-      entry->setValue(value);
-    }
-  }
-
-  void test(std::vector<long double> &test_set) {
-    int count = 0;
-    auto start = std::chrono::high_resolution_clock::now();
-    for (int k = 0; k < test_set.size(); k += 2) {
-      Coord testValue;
-      get(test_set[k], test_set[k + 1], testValue);
-      assert(testValue.isEqual(_data.list[k / 2]));
-      count++;
-    }
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    std::cout << "Total look up time : " << duration.count() << " nanoseconds"
-              << std::endl;
-    std::cout << "Average look up time : "
-              << duration.count() / (test_set.size() / 2) << " nanoseconds"
-              << std::endl;
-    std::cout << "Correct item found: " << count << std::endl;
-  }
-
-  void remove(const K &key) {
+  void removeNode(const K &key) {
     unsigned long hashKey = hash_key(key);
-    HashNode<K, Coord> *prev = NULL;
-    HashNode<K, Coord> *entry = table[hashKey];
+    HashNode<K, Entry> *prev = NULL;
+    HashNode<K, Entry> *temp = table[hashKey];
 
-    while (entry != NULL && entry->getKey() != key) {
-      prev = entry;
-      entry = entry->getNext();
+    while (temp != NULL && temp->getKey() != key) {
+      prev = temp;
+      temp = temp->getNext();
     }
 
-    if (entry == NULL) {
+    if (temp == NULL) {
       // key not found
       return;
     } else {
       if (prev == NULL) {
         // remove first bucket of the list
-        table[hashKey] = entry->getNext();
+        table[hashKey] = temp->getNext();
       } else {
-        prev->setNext(entry->getNext());
+        prev->setNext(temp->getNext());
       }
 
-      delete entry;
+      delete temp;
     }
   }
 
-  void printHashMap() {
+  void resize(int size) {
+    size_t newSize = size * 2;
+    HashNode<K, Entry> **newTable = new int[newSize];
+    memcpy(newTable, table, size * sizeof(int));
+
+    size = newSize;
+    delete[] table;
+    table = newTable;
+  }
+
+  void display() {
     std::cout << "{" << std::endl;
-    for (size_t i = 0; i < tableSize; ++i) {
-      HashNode<K, Coord> *entry = table[i];
+    for (size_t i = 0; i < Capacity; ++i) {
+      HashNode<K, Entry> *temp = table[i];
       bool isFirst = true;
-      if (entry != NULL) {
-        while (entry != NULL) {
+      if (temp != NULL) {
+        while (temp != NULL) {
           if (isFirst) {
-            K key = entry->getKey();
+            K key = temp->getKey();
             std::cout << key << ": ";
             isFirst = false;
           }
-          Coord item = entry->getValue();
+          Entry item = temp->getValue();
           std::cout << "(" << item.id << "," << item.lat << "," << item.lon
                     << ") -> ";
-          entry = entry->getNext();
+          temp = temp->getNext();
         }
         std::cout << std::endl;
       }

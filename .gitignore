@@ -247,6 +247,7 @@ vc_hdrs.h
 # Session
 Session.vim
 Sessionx.vim
+.session.vim
 
 # Temporary
 .netrwhist

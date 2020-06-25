@@ -7,20 +7,15 @@
 
 typedef uint64_t id_type;
 
-class Entry {
-public:
-  Entry(const long double &lat, const long double &lon);
-  ~Entry() = default;
-  id_type getId();
-  void setId(id_type id);
-  const long double getLat();
-  const long double getLon();
-  bool isEqual(Entry &other) const;
+struct Entry {
+  long double lat, lon;
+  id_type id;
 
-private:
-  id_type _id;
-  const long double _lat;
-  const long double _lon;
+  void setId(id_type i) { id = i; }
+
+  bool operator==(const Entry &t) const {
+    return (this->lat == t.lat && this->lon == t.lon);
+  }
 };
 
 #endif
