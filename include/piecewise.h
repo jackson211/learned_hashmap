@@ -55,6 +55,7 @@ public:
     T s_slope;
     T s_intercept;
     linear_fn(segment_train_x, segment_train_y, &s_slope, &s_intercept);
+    s_intercept += 0.5f;
     params.push_back(ModelParam{s_slope, s_intercept});
 
     for (int i = 0; i < segment_train_x.size(); i++) {
@@ -77,8 +78,7 @@ public:
         break;
       }
     }
-    return params[segment].slope * x + params[segment].intercept + 0.5f -
-           (x < 0);
+    return params[segment].slope * x + params[segment].intercept;
   }
 
   template <typename V = int>

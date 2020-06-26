@@ -66,10 +66,7 @@ public:
               << std::endl;
   }
 
-  template <typename V = int> V predict(T x) {
-    // Round to nearest int, (x < 0) to check if x is negative or not
-    return x * _slope + _intercept - (x < 0);
-  }
+  template <typename V = int> V predict(T x) { return x * _slope + _intercept; }
 
   template <typename V = int>
   std::vector<V> predict_list(std::vector<T> test_x) {
