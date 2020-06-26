@@ -14,7 +14,6 @@
 #include <string>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <unordered_set>
 #include <vector>
 
 namespace utils {
@@ -26,17 +25,24 @@ void reset_id(std::vector<Entry> *data) {
   }
 }
 
-template <typename T> void rm_repeat(std::vector<Entry *> *data) {
-  std::set<T> s;
-  unsigned size = data->size();
-  for (unsigned i = 0; i < size; ++i)
-    s.insert(data[i]);
-  data->assign(s.begin(), s.end());
+void remove_repeated(std::vector<Entry> *data) {
+  data->erase(std::unique(data->begin(), data->end(),
+                          [](const Entry &lhs, const Entry &rhs) {
+                            return lhs.lon == rhs.lon && lhs.lat == rhs.lat;
+                          }),
+              data->end());
 }
 
-// void sort_data(std::vector<Entry *> *data, bool compare) {
-//   std::sort(data->begin(), data->end(), compare);
-// }
+void sort_data(bool sort_by_lat, std::vector<Entry> *data) {
+  sort_by_lat ? std::sort(data->begin(), data->end(),
+                          [](const Entry &lhs, const Entry &rhs) {
+                            return lhs.lat < rhs.lat;
+                          })
+              : std::sort(data->begin(), data->end(),
+                          [](const Entry &lhs, const Entry &rhs) {
+                            return lhs.lon < rhs.lon;
+                          });
+}
 
 template <typename T>
 bool read_data(std ::string const &filename, std::vector<Entry> *data) {
@@ -60,26 +66,10 @@ bool read_data(std ::string const &filename, std::vector<Entry> *data) {
   // Check if # unique value of latitude is larger than # unique value of
   // lontitude
   bool sort_by_lat = (lat_counter.size() >= lon_counter.size()) ? true : false;
-
-  // Sort data
-  sort_by_lat ? std::sort(data->begin(), data->end(),
-                          [](const Entry &lhs, const Entry &rhs) {
-                            return lhs.lat < rhs.lat;
-                          })
-              : std::sort(data->begin(), data->end(),
-                          [](const Entry &lhs, const Entry &rhs) {
-                            return lhs.lon < rhs.lon;
-                          });
-
-  // Remove repeated data
-  data->erase(std::unique(data->begin(), data->end(),
-                          [](const Entry &lhs, const Entry &rhs) {
-                            return lhs.lon == rhs.lon && lhs.lat == rhs.lat;
-                          }),
-              data->end());
-
-  // Reset id for data
+  sort_data(sort_by_lat, data);
+  remove_repeated(data);
   reset_id(data);
+
   std::cout << "Total number of data: " << data->size() << std::endl;
   return sort_by_lat;
 }

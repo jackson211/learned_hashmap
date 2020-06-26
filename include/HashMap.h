@@ -7,6 +7,7 @@
 #include "entry.h"
 #include <cstddef>
 #include <iostream>
+#include <unordered_map>
 
 #include <cstddef>
 
@@ -37,15 +38,6 @@ public:
 
 // HashMap class
 template <typename K, typename ModelType> class HashMap {
-private:
-  HashNode<K, Entry> **table;
-  size_t Capacity;
-  ModelType _model;
-  bool sort_by_lat;
-  const int MIN;
-  HashMap(const HashMap &other);
-  const HashMap &operator=(const HashMap &other);
-
 public:
   HashMap(ModelType &model, size_t c, bool &sort_order,
           const int MIN_PRED_VALUE)
@@ -69,6 +61,7 @@ public:
 
       table[i] = NULL;
     }
+    delete[] table;
   }
 
   unsigned long hash_function(long double value) {
@@ -118,39 +111,68 @@ public:
     return false;
   }
 
-  void removeNode(const K &key) {
-    unsigned long hashKey = hash_key(key);
-    HashNode<K, Entry> *prev = NULL;
-    HashNode<K, Entry> *temp = table[hashKey];
+  // void removeNode(const K &key) {
+  //   unsigned long hashKey = hash_key(key);
+  //   HashNode<K, Entry> *prev = NULL;
+  //   HashNode<K, Entry> *temp = table[hashKey];
 
-    while (temp != NULL && temp->getKey() != key) {
-      prev = temp;
-      temp = temp->getNext();
-    }
+  //   while (temp != NULL && temp->getKey() != key) {
+  //     prev = temp;
+  //     temp = temp->getNext();
+  //   }
 
-    if (temp == NULL) {
-      // key not found
-      return;
-    } else {
-      if (prev == NULL) {
-        // remove first bucket of the list
-        table[hashKey] = temp->getNext();
-      } else {
-        prev->setNext(temp->getNext());
-      }
+  //   if (temp == NULL) {
+  //     // key not found
+  //     return;
+  //   } else {
+  //     if (prev == NULL) {
+  //       // remove first bucket of the list
+  //       table[hashKey] = temp->getNext();
+  //     } else {
+  //       prev->setNext(temp->getNext());
+  //     }
 
-      delete temp;
-    }
-  }
+  //     delete temp;
+  //   }
+  // }
 
-  void resize(int size) {
-    size_t newSize = size * 2;
-    HashNode<K, Entry> **newTable = new int[newSize];
-    memcpy(newTable, table, size * sizeof(int));
+  void resize(size_t newCapacity) {
+    HashNode<K, Entry> **newTable = new HashNode<K, Entry> *[newCapacity];
+    memcpy(newTable, table, Capacity * sizeof(size_t));
 
-    size = newSize;
+    Capacity = newCapacity;
     delete[] table;
     table = newTable;
+  }
+
+  void display_stats() {
+    std::unordered_map<unsigned long, int> mp;
+
+    for (size_t i = 0; i < Capacity; ++i) {
+      HashNode<K, Entry> *entry = table[i];
+      if (entry == NULL) {
+        mp[i] = 0;
+      }
+      while (entry != NULL) {
+        mp[i]++;
+        entry = entry->getNext();
+      }
+    }
+
+    int total = 0;
+    int count = 0;
+    std::cout << "{ ";
+    for (auto x : mp) {
+      if (x.second != 0) {
+        std::cout << x.first << ": " << x.second << std::endl;
+        total += x.second;
+        count++;
+      }
+    }
+    std::cout << " }" << std::endl;
+    std::cout << "Total entries: " << total << std::endl;
+    std::cout << "Total slots: " << count << std::endl;
+    std::cout << "Average: " << total / (double)count << std::endl;
   }
 
   void display() {
@@ -175,6 +197,16 @@ public:
     }
     std::cout << "}" << std::endl;
   }
+
+private:
+  HashNode<K, Entry> **table;
+  size_t Capacity;
+  ModelType _model;
+  bool sort_by_lat;
+  const int MIN;
+
+  HashMap(const HashMap &other);
+  const HashMap &operator=(const HashMap &other);
 };
 
 #endif

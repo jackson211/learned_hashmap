@@ -5,11 +5,9 @@
 #include <set>
 #include <string>
 #include <sys/stat.h>
-#include <unordered_map>
 
-#include "../include/HashMap.h"
 #include "../include/entry.h"
-#include "../include/index.h"
+#include "../include/hashmap.h"
 #include "../include/linear.h"
 #include "../include/piecewise.h"
 #include "../include/utils.h"
@@ -128,7 +126,10 @@ int main(int argc, char *argv[]) {
                                sort_by_lat, MIN_PRED_VALUE);
   for (i = 0; i < data.size(); i++)
     hm.insertNode(data[i]);
-  std::cout << "Inserted all nodes into HashMap" << std::endl;
+  std::cout << "Inserted all nodes into HashMap\nHashmap Stats:" << std::endl;
+
+  // hm.display_stats();
+  // hm.display();
 
   /*
    *
@@ -151,7 +152,9 @@ int main(int argc, char *argv[]) {
 
   for (i = 0; i < test_set.size(); i += 2) {
     bool tmp_found = hm.getNode(test_set[i], test_set[i + 1], tmp_result);
-    lookup_results.push_back(tmp_result);
+    if (tmp_found) {
+      lookup_results.push_back(tmp_result);
+    }
   }
   duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
   int true_positives = 0;
@@ -163,7 +166,7 @@ int main(int argc, char *argv[]) {
 
   /*
    *
-   * Print results
+   * Print stats
    *
    */
   std::cout << "--------------------\nHashMap look up results:\nFound :"
