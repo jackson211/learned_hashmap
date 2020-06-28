@@ -88,7 +88,6 @@ namespace utils
     remove_repeated(data);
     reset_id(data);
 
-    std::cout << "Total number of data: " << data->size() << std::endl;
     return sort_by_lat;
   }
 }; // namespace utils

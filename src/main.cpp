@@ -32,8 +32,10 @@ int main(int argc, char *argv[])
   std::vector<Entry> data;
   bool sort_by_lat = utils::read_data<long double>(argv[1], &data);
   std::string sort_text = sort_by_lat ? std::string("lat") : std::string("lon");
-  std::cout << "Sort by " << sort_text << "\n"
-            << "Size: " << data.size() << std::endl;
+
+  std::cout << "\n-READ DATA\nData Stats:\n"
+            << "  Sort by " << sort_text << "\n"
+            << "  Size: " << data.size() << std::endl;
 
   /*
    *
@@ -72,32 +74,16 @@ int main(int argc, char *argv[])
    */
   DataType train_x = sort_by_lat ? lats : lons;
   LinearModel lm;
-  std::cout << "Training on "
-            << "Linear model" << std::endl;
-
-  // Training Timing start
 
   auto start = std::chrono::high_resolution_clock::now();
   lm.fit(train_x, train_y);
   auto end = std::chrono::high_resolution_clock::now();
-
-  // Training Timing end
-
   auto duration =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  std::cout << "Training time: " << duration.count() << " nanoseconds"
-            << std::endl;
-  std::cout << "Slope: " << lm.getSlope()
+  std::cout << "\n-TRAIN MODEL\nTraining on Linear model\n"
+            << "Training time: " << duration.count() << " nanoseconds\n"
+            << "Slope: " << lm.getSlope()
             << ", Intercept: " << lm.getIntercept() << std::endl;
-
-  /*
-   *
-   * Piecewise Model
-   *
-   */
-  // PiecewiseModel pm;
-  // pm.fit(train_x, train_y);
-  // std::vector<int> pred_result = pm.predict_list<int>(train_x);
 
   /*
    *
@@ -113,8 +99,17 @@ int main(int argc, char *argv[])
       *std::max_element(pred_result.begin(), pred_result.end());
   const int MIN_PRED_VALUE =
       *std::min_element(pred_result.begin(), pred_result.end());
-  std::cout << "Max: " << MAX_PRED_VALUE << ", Min: " << MIN_PRED_VALUE
-            << ", Max-Min: " << MAX_PRED_VALUE - MIN_PRED_VALUE + 1 << std::endl;
+  std::cout << "Prediction:{ Max: " << MAX_PRED_VALUE << ", Min: " << MIN_PRED_VALUE
+            << ", Max-Min: " << MAX_PRED_VALUE - MIN_PRED_VALUE + 1 << " }" << std::endl;
+
+  /*
+   *
+   * Piecewise Model
+   *
+   */
+  // PiecewiseModel pm;
+  // pm.fit(train_x, train_y);
+  // std::vector<int> pred_result = pm.predict_list<int>(train_x);
 
   /*
    *
@@ -127,14 +122,16 @@ int main(int argc, char *argv[])
    *    of negative value and keep every index within size of the table.
    *
    */
-  std::cout << "Building HashMap..." << std::endl;
+  std::cout << "\n-BUILD HASHMAP" << std::endl;
 
+  start = std::chrono::high_resolution_clock::now();
   HashMap<int, LinearModel> hashmap(lm, sort_by_lat, MIN_PRED_VALUE, MAX_PRED_VALUE);
   for (i = 0; i < data.size(); i++)
     hashmap.insertNode(data[i]);
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
-  std::cout << "Inserted all nodes into HashMap" << std::endl;
-  std::cout << "Hashmap Stats:" << std::endl;
+  std::cout << "HashMap insertion time: " << duration.count() << " nanoseconds\nHashmap Stats:";
   bool full_info = false;
   hashmap.display_stats(full_info);
   // hashmap.display();
@@ -149,9 +146,7 @@ int main(int argc, char *argv[])
   // First look up loop for recording performance
   start = std::chrono::high_resolution_clock::now();
   for (i = 0; i < test_set.size(); i += 2)
-  {
     hashmap.getNode(test_set[i], test_set[i + 1], tmp_result);
-  }
   end = std::chrono::high_resolution_clock::now();
   duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
@@ -180,13 +175,13 @@ int main(int argc, char *argv[])
    * Print stats
    *
    */
-  std::cout << "-------------------------\nHashMap look up results:\nFound :"
-            << found << "\nTrue Positives: " << true_positives
-            << "\nPrecision: " << true_positives / (double)data.size() * 100.0
+  std::cout << "\n-RESULTS\nHashMap look up results:\n  Found: "
+            << found << "\n  True Positives: " << true_positives
+            << "\n  Precision: " << true_positives / (double)data.size() * 100.0
             << "% "
-            << "\nRecall: " << true_positives / (double)found * 100.0 << "% "
-            << "\nLook up time: " << duration.count() << " nanoseconds"
-            << "\nAverage look up time: " << duration.count() / data.size()
+            << "\n  Recall: " << true_positives / (double)found * 100.0 << "% "
+            << "\n  Look up time: " << duration.count() << " nanoseconds"
+            << "\n  Average look up time: " << duration.count() / data.size()
             << " nanoseconds" << std::endl;
 
   return 0;

@@ -1042,3 +1042,4 @@ Module.symvers
 Mkfile.old
 dkms.conf
 .vscode/launch.json
+.vscode/settings.json

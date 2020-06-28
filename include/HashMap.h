@@ -47,7 +47,8 @@ public:
           const int MAX_PRED_VALUE)
       : _model(model),
         sort_by_lat(sort_order),
-        MIN(MIN_PRED_VALUE), MAX(MAX_PRED_VALUE)
+        MIN(MIN_PRED_VALUE),
+        MAX(MAX_PRED_VALUE)
   {
     Capacity = MAX_PRED_VALUE - MIN_PRED_VALUE + 1;
     table = new HashNode<K, Entry> *[Capacity];
@@ -108,21 +109,23 @@ public:
   bool getNode(const long double lat, const long double lon, Entry &value)
   {
     unsigned long hashKey = hash_function(sort_by_lat ? lat : lon);
-    HashNode<K, Entry> *temp = table[hashKey];
-
-    while (temp != NULL)
+    if (hashKey <= Capacity)
     {
-      if (temp->getValue().lon == lon)
-      {
-        if (temp->getValue().lat == lat)
-        {
-          value = temp->getValue();
-          return true;
-        }
-      }
-      temp = temp->getNext();
-    }
+      HashNode<K, Entry> *temp = table[hashKey];
 
+      while (temp != NULL)
+      {
+        if (temp->getValue().lon == lon)
+        {
+          if (temp->getValue().lat == lat)
+          {
+            value = temp->getValue();
+            return true;
+          }
+        }
+        temp = temp->getNext();
+      }
+    }
     return false;
   }
 
@@ -134,25 +137,28 @@ public:
 
     while (temp != NULL)
     {
-      if ((temp->getValue().lon == lon) && (temp->getValue().lat == lat))
+      if (temp->getValue().lon == lon)
       {
-        if (temp->getNext() == NULL)
+        if (temp->getValue().lat == lat)
         {
-          if (prev == NULL)
-            table[hashKey] = NULL;
+          if (temp->getNext() == NULL)
+          {
+            if (prev == NULL)
+              table[hashKey] = NULL;
+            else
+              prev->setNext(NULL);
+          }
           else
-            prev->setNext(NULL);
+          {
+            HashNode<K, Entry> *next_value = temp->getNext();
+            if (prev == NULL)
+              table[hashKey] = next_value;
+            else
+              prev->setNext(next_value);
+          }
+          delete temp;
+          return true;
         }
-        else
-        {
-          HashNode<K, Entry> *next_value = temp->getNext();
-          if (prev == NULL)
-            table[hashKey] = next_value;
-          else
-            prev->setNext(next_value);
-        }
-        delete temp;
-        return true;
       }
       prev = temp;
       temp = temp->getNext();
@@ -189,7 +195,9 @@ public:
     }
     int total = 0;
     int count = 0;
-    std::cout << "{ ";
+
+    if (showFullStats)
+      std::cout << "{ ";
     for (auto x : mp)
     {
       if (x.second != 0)
@@ -202,10 +210,11 @@ public:
         count++;
       }
     }
-    std::cout << " }" << std::endl;
-    std::cout << "Total entries: " << total << std::endl;
-    std::cout << "Total slots: " << count << std::endl;
-    std::cout << "Average: " << total / (double)count << std::endl;
+    if (showFullStats)
+      std::cout << " }" << std::endl;
+    std::cout << "\n  Total entries: " << total
+              << "\n  Total slots: " << count
+              << "\n  Average entries per slots: " << total / (double)count << std::endl;
   }
 
   void display()
