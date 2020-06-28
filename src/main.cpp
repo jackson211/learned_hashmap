@@ -16,30 +16,28 @@ typedef std::vector<long double> DataType;
 typedef model::Linear<long double> LinearModel;
 typedef model::Piecewise<long double> PiecewiseModel;
 
-int main(int argc, char *argv[]) {
-  if (argc < 2) {
+int main(int argc, char *argv[])
+{
+  if (argc < 2)
+  {
     std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
     return 1;
   }
 
-  // Check is file readable
-  std::string filename = argv[1];
-  struct stat buffer;
-  if (stat(filename.c_str(), &buffer) != 0) {
-    std::cout << "Error reading " << filename << std::endl;
-    exit(1);
-  };
-
-  // Reading data from file
+  /*
+   *
+   * Reading data from file
+   *
+   */
   std::vector<Entry> data;
-  bool sort_by_lat = utils::read_data<long double>(filename, &data);
+  bool sort_by_lat = utils::read_data<long double>(argv[1], &data);
   std::string sort_text = sort_by_lat ? std::string("lat") : std::string("lon");
   std::cout << "Sort by " << sort_text << "\n"
             << "Size: " << data.size() << std::endl;
 
   /*
    *
-   * Spilt train and test data
+   * Setting up train and test data
    *
    *  lats: only contains latitudes
    *  lons: only contains longitudes
@@ -53,7 +51,8 @@ int main(int argc, char *argv[]) {
   DataType test_set;
   DataType train_y;
   int i;
-  for (i = 0; i < data.size(); i++) {
+  for (i = 0; i < data.size(); i++)
+  {
     long double lat = data[i].lat;
     long double lon = data[i].lon;
     lats.push_back(lat);
@@ -65,7 +64,7 @@ int main(int argc, char *argv[]) {
 
   /*
    *
-   * Train linear model
+   * Training linear model
    *
    *    train_x is decided by variance of latitudes or longitudes which we wish
    *    to train on the column that has more spreaded data distribution.
@@ -73,6 +72,8 @@ int main(int argc, char *argv[]) {
    */
   DataType train_x = sort_by_lat ? lats : lons;
   LinearModel lm;
+  std::cout << "Training on "
+            << "Linear model" << std::endl;
 
   // Training Timing start
 
@@ -86,6 +87,17 @@ int main(int argc, char *argv[]) {
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
   std::cout << "Training time: " << duration.count() << " nanoseconds"
             << std::endl;
+  std::cout << "Slope: " << lm.getSlope()
+            << ", Intercept: " << lm.getIntercept() << std::endl;
+
+  /*
+   *
+   * Piecewise Model
+   *
+   */
+  // PiecewiseModel pm;
+  // pm.fit(train_x, train_y);
+  // std::vector<int> pred_result = pm.predict_list<int>(train_x);
 
   /*
    *
@@ -102,14 +114,7 @@ int main(int argc, char *argv[]) {
   const int MIN_PRED_VALUE =
       *std::min_element(pred_result.begin(), pred_result.end());
   std::cout << "Max: " << MAX_PRED_VALUE << ", Min: " << MIN_PRED_VALUE
-            << ", Max-Min: " << MAX_PRED_VALUE - MIN_PRED_VALUE << std::endl;
-
-  // PiecewiseModel pm;
-  // pm.fit(train_x, train_y);
-  // for (i = 0; i < lats.size(); i++) {
-  //   int p = pm.predict<int>(lats[i]);
-  //   std::cout << "Input: " << lats[i] << " prediction: " << p << std::endl;
-  // }
+            << ", Max-Min: " << MAX_PRED_VALUE - MIN_PRED_VALUE + 1 << std::endl;
 
   /*
    *
@@ -117,51 +122,57 @@ int main(int argc, char *argv[]) {
    *
    *    Building HashMap using hash key that from model predicted value.
    *    Size of the table is (MAX_PRED_VALUE - MIN_PRED_VALUE + 1).
-   *    Every predicted value have to subtract by the MIN_PRED_VALUE to get rid
+   *    Every predicted value have to subtract by the MIN_PRED_VALUE to get
+  rid
    *    of negative value and keep every index within size of the table.
    *
    */
   std::cout << "Building HashMap..." << std::endl;
-  HashMap<int, LinearModel> hm(lm, MAX_PRED_VALUE - MIN_PRED_VALUE + 1,
-                               sort_by_lat, MIN_PRED_VALUE);
-  for (i = 0; i < data.size(); i++)
-    hm.insertNode(data[i]);
-  std::cout << "Inserted all nodes into HashMap\nHashmap Stats:" << std::endl;
 
-  // hm.display_stats();
-  // hm.display();
+  HashMap<int, LinearModel> hashmap(lm, sort_by_lat, MIN_PRED_VALUE, MAX_PRED_VALUE);
+  for (i = 0; i < data.size(); i++)
+    hashmap.insertNode(data[i]);
+
+  std::cout << "Inserted all nodes into HashMap" << std::endl;
+  std::cout << "Hashmap Stats:" << std::endl;
+  bool full_info = false;
+  hashmap.display_stats(full_info);
+  // hashmap.display();
 
   /*
    *
    * Test look up performance
    *
    */
-  std::vector<Entry> lookup_results;
   Entry tmp_result;
-  int found = 0;
 
-  // Look up Timing start
-
+  // First look up loop for recording performance
   start = std::chrono::high_resolution_clock::now();
-  for (i = 0; i < test_set.size(); i += 2) {
-    found += hm.getNode(test_set[i], test_set[i + 1], tmp_result);
+  for (i = 0; i < test_set.size(); i += 2)
+  {
+    hashmap.getNode(test_set[i], test_set[i + 1], tmp_result);
   }
   end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
-  // Look up Timing end
-
-  for (i = 0; i < test_set.size(); i += 2) {
-    bool tmp_found = hm.getNode(test_set[i], test_set[i + 1], tmp_result);
-    if (tmp_found) {
+  // Second look up loop for testing accuracy
+  int found = 0;
+  std::vector<Entry> lookup_results;
+  for (i = 0; i < test_set.size(); i += 2)
+  {
+    bool tmp_found = hashmap.getNode(test_set[i], test_set[i + 1], tmp_result);
+    if (tmp_found)
+    {
+      found++;
       lookup_results.push_back(tmp_result);
     }
   }
-  duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
   int true_positives = 0;
-  for (i = 0; i < lookup_results.size(); i++) {
-    if (lookup_results[i] == data[i]) {
+  for (i = 0; i < lookup_results.size(); i++)
+  {
+    if (lookup_results[i] == data[i])
       true_positives++;
-    }
   }
 
   /*
@@ -169,7 +180,7 @@ int main(int argc, char *argv[]) {
    * Print stats
    *
    */
-  std::cout << "--------------------\nHashMap look up results:\nFound :"
+  std::cout << "-------------------------\nHashMap look up results:\nFound :"
             << found << "\nTrue Positives: " << true_positives
             << "\nPrecision: " << true_positives / (double)data.size() * 100.0
             << "% "

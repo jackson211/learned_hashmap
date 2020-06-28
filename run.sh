@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-INPUT_FILE='test3.txt'
+INPUT_FILE='NE.txt'
 cmake --build build && ./build/main $INPUT_FILE
