@@ -16,10 +16,8 @@ typedef std::vector<long double> DataType;
 typedef model::Linear<long double> LinearModel;
 typedef model::Piecewise<long double> PiecewiseModel;
 
-int main(int argc, char *argv[])
-{
-  if (argc < 2)
-  {
+int main(int argc, char *argv[]) {
+  if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
     return 1;
   }
@@ -53,8 +51,7 @@ int main(int argc, char *argv[])
   DataType test_set;
   DataType train_y;
   int i;
-  for (i = 0; i < data.size(); i++)
-  {
+  for (i = 0; i < data.size(); i++) {
     long double lat = data[i].lat;
     long double lon = data[i].lon;
     lats.push_back(lat);
@@ -99,8 +96,10 @@ int main(int argc, char *argv[])
       *std::max_element(pred_result.begin(), pred_result.end());
   const int MIN_PRED_VALUE =
       *std::min_element(pred_result.begin(), pred_result.end());
-  std::cout << "Prediction:{ Max: " << MAX_PRED_VALUE << ", Min: " << MIN_PRED_VALUE
-            << ", Max-Min: " << MAX_PRED_VALUE - MIN_PRED_VALUE + 1 << " }" << std::endl;
+  std::cout << "Prediction:{ Max: " << MAX_PRED_VALUE
+            << ", Min: " << MIN_PRED_VALUE
+            << ", Max-Min: " << MAX_PRED_VALUE - MIN_PRED_VALUE + 1 << " }"
+            << std::endl;
 
   /*
    *
@@ -125,13 +124,15 @@ int main(int argc, char *argv[])
   std::cout << "\n-BUILD HASHMAP" << std::endl;
 
   start = std::chrono::high_resolution_clock::now();
-  HashMap<int, LinearModel> hashmap(lm, sort_by_lat, MIN_PRED_VALUE, MAX_PRED_VALUE);
+  HashMap<int, LinearModel> hashmap(lm, sort_by_lat, MIN_PRED_VALUE,
+                                    MAX_PRED_VALUE);
   for (i = 0; i < data.size(); i++)
     hashmap.insertNode(data[i]);
   end = std::chrono::high_resolution_clock::now();
   duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
-  std::cout << "HashMap insertion time: " << duration.count() << " nanoseconds\nHashmap Stats:";
+  std::cout << "HashMap insertion time: " << duration.count()
+            << " nanoseconds\nHashmap Stats:";
   bool full_info = false;
   hashmap.display_stats(full_info);
   // hashmap.display();
@@ -153,19 +154,16 @@ int main(int argc, char *argv[])
   // Second look up loop for testing accuracy
   int found = 0;
   std::vector<Entry> lookup_results;
-  for (i = 0; i < test_set.size(); i += 2)
-  {
+  for (i = 0; i < test_set.size(); i += 2) {
     bool tmp_found = hashmap.getNode(test_set[i], test_set[i + 1], tmp_result);
-    if (tmp_found)
-    {
+    if (tmp_found) {
       found++;
       lookup_results.push_back(tmp_result);
     }
   }
 
   int true_positives = 0;
-  for (i = 0; i < lookup_results.size(); i++)
-  {
+  for (i = 0; i < lookup_results.size(); i++) {
     if (lookup_results[i] == data[i])
       true_positives++;
   }
@@ -175,8 +173,8 @@ int main(int argc, char *argv[])
    * Print stats
    *
    */
-  std::cout << "\n-RESULTS\nHashMap look up results:\n  Found: "
-            << found << "\n  True Positives: " << true_positives
+  std::cout << "\n-RESULTS\nHashMap look up results:\n  Found: " << found
+            << "\n  True Positives: " << true_positives
             << "\n  Precision: " << true_positives / (double)data.size() * 100.0
             << "% "
             << "\n  Recall: " << true_positives / (double)found * 100.0 << "% "
