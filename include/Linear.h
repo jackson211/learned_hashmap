@@ -31,8 +31,8 @@ namespace model
 #pragma omp parallel for shared(train_x, train_y) reduction(+ : sum_x, sum_y, cx, cy)
         for (i = 0; i < n; i++)
         {
-            long double x = train_x[i] - cx;
-            long double y = train_y[i] - cy;
+            long double x = (long double)train_x[i] - cx;
+            long double y = (long double)train_y[i] - cy;
             long double tx = sum_x + x;
             long double ty = sum_y + y;
             cx = (tx - sum_x) - x;
@@ -49,8 +49,8 @@ namespace model
 #pragma omp parallel for shared(train_x, train_y) reduction(+:sq_diff_sum,cov_diff_sum)
         for (i = 0; i < n; i++)
         {
-            long double temp_x = train_x[i];
-            long double temp_y = train_y[i];
+            long double temp_x = (long double)train_x[i];
+            long double temp_y = (long double)train_y[i];
             sq_diff_sum += (temp_x - mean_x) * (temp_x - mean_x);
             cov_diff_sum += (temp_x - mean_x) * (temp_y - mean_y);
         }
