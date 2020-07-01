@@ -1043,3 +1043,4 @@ Mkfile.old
 dkms.conf
 .vscode/launch.json
 .vscode/settings.json
+.clang-format

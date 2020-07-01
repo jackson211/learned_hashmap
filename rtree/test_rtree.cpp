@@ -13,117 +13,130 @@
 #include <sys/stat.h>
 #include <vector>
 
-struct Rect {
-  Rect() {}
+struct Rect
+{
+    Rect() {}
 
-  Rect(long double a_minX, long double a_minY, long double a_maxX,
-       long double a_maxY) {
-    min[0] = a_minX;
-    min[1] = a_minY;
+    Rect(long double a_minX, long double a_minY, long double a_maxX,
+         long double a_maxY)
+    {
+        min[0] = a_minX;
+        min[1] = a_minY;
 
-    max[0] = a_maxX;
-    max[1] = a_maxY;
-  }
+        max[0] = a_maxX;
+        max[1] = a_maxY;
+    }
 
-  long double min[2];
-  long double max[2];
+    long double min[2];
+    long double max[2];
 };
 
-bool MySearchCallback(int id, void *arg) {
-  // printf("Hit data rect %d\n", id);
-  return true; // keep going
+bool MySearchCallback(int id, void *arg)
+{
+    // printf("Hit data rect %d\n", id);
+    return true; // keep going
 }
 
-void is_valid_file(const std::string filename) {
-  struct stat buffer;
-  if (stat(filename.c_str(), &buffer) != 0) {
-    std::cout << "Error reading " << filename << std::endl;
-    exit(1);
-  };
+void is_valid_file(const std::string filename)
+{
+    struct stat buffer;
+    if (stat(filename.c_str(), &buffer) != 0)
+    {
+        std::cout << "Error reading " << filename << std::endl;
+        exit(1);
+    };
 }
 
-void remove_repeated(std::vector<Rect> *data) {
-  data->erase(std::unique(data->begin(), data->end(),
-                          [](const Rect &lhs, const Rect &rhs) {
-                            return lhs.min[0] == rhs.min[0] &&
-                                   lhs.min[1] == rhs.min[1] &&
-                                   lhs.max[0] == rhs.max[0] &&
-                                   lhs.max[1] == rhs.max[1];
-                          }),
-              data->end());
+void remove_repeated(std::vector<Rect> *data)
+{
+    data->erase(std::unique(data->begin(), data->end(),
+                            [](const Rect &lhs, const Rect &rhs) {
+                                return lhs.min[0] == rhs.min[0] &&
+                                       lhs.min[1] == rhs.min[1] &&
+                                       lhs.max[0] == rhs.max[0] &&
+                                       lhs.max[1] == rhs.max[1];
+                            }),
+                data->end());
 }
 
 template <typename T>
-bool read_data(std ::string const &filename, std::vector<Rect> *data) {
-  is_valid_file(filename);
-  std::cout << "Reading from " << filename << std::endl;
-  std::fstream in(filename);
-  std::string line;
-  T lat;
-  T lon;
+bool read_data(std ::string const &filename, std::vector<Rect> *data)
+{
+    is_valid_file(filename);
+    std::cout << "Reading from " << filename << std::endl;
+    std::fstream in(filename);
+    std::string line;
+    T lat;
+    T lon;
 
-  while (std::getline(in, line)) {
-    std::stringstream ss(line);
-    if (!(ss >> lat >> lon))
-      break;
-    data->push_back(Rect(lat, lon, lat, lon));
-  }
+    while (std::getline(in, line))
+    {
+        std::stringstream ss(line);
+        if (!(ss >> lat >> lon))
+            break;
+        data->push_back(Rect(lat, lon, lat, lon));
+    }
 
-  remove_repeated(data);
+    remove_repeated(data);
 
-  return true;
+    return true;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
-    return 1;
-  }
+    if (argc < 2)
+    {
+        std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
+        return 1;
+    }
 
-  std::vector<Rect> rects;
-  bool is_read = read_data<long double>(argv[1], &rects);
+    std::vector<Rect> rects;
+    bool is_read = read_data<long double>(argv[1], &rects);
 
-  int nrects = rects.size();
+    int nrects = rects.size();
 
-  RTree<int, long double, 2, float> tree;
+    RTree<int, long double, 2, float> tree;
 
-  int i, nhits;
-  printf("number of rects = %d\n", nrects);
+    int i, nhits;
+    printf("number of rects = %d\n", nrects);
 
-  for (i = 0; i < nrects; i++) {
-    tree.Insert(rects[i].min, rects[i].max,
-                i); // Note, all values including zero are fine in this version
-  }
+    for (i = 0; i < nrects; i++)
+    {
+        tree.Insert(
+            rects[i].min, rects[i].max,
+            i); // Note, all values including zero are fine in this version
+    }
 
-  // Iterator test
-  // int itIndex = 0;
-  // RTree<int, long double, 2, float>::Iterator it;
-  // for (tree.GetFirst(it); !tree.IsNull(it); tree.GetNext(it)) {
-  //   int value = tree.GetAt(it);
+    // Iterator test
+    // int itIndex = 0;
+    // RTree<int, long double, 2, float>::Iterator it;
+    // for (tree.GetFirst(it); !tree.IsNull(it); tree.GetNext(it)) {
+    //   int value = tree.GetAt(it);
 
-  //   long double boundsMin[2] = {0, 0};
-  //   long double boundsMax[2] = {0, 0};
-  //   it.GetBounds(boundsMin, boundsMax);
-  //   printf("it[%d] %d = (%Lf,%Lf,%Lf,%Lf)\n", itIndex++, value, boundsMin[0],
-  //          boundsMin[1], boundsMax[0], boundsMax[1]);
-  // }
+    //   long double boundsMin[2] = {0, 0};
+    //   long double boundsMax[2] = {0, 0};
+    //   it.GetBounds(boundsMin, boundsMax);
+    //   printf("it[%d] %d = (%Lf,%Lf,%Lf,%Lf)\n", itIndex++, value,
+    //   boundsMin[0],
+    //          boundsMin[1], boundsMax[0], boundsMax[1]);
+    // }
 
-  std::vector<Rect> search_rects = rects;
+    std::vector<Rect> search_rects = rects;
 
-  auto start = std::chrono::high_resolution_clock::now();
-  for (i = 0; i < search_rects.size(); i++)
-    nhits = tree.Search(search_rects[i].min, search_rects[i].max,
-                        MySearchCallback, NULL);
-  // printf("Search resulted in %d hits\n", nhits);
+    auto start = std::chrono::high_resolution_clock::now();
+    for (i = 0; i < search_rects.size(); i++)
+        nhits = tree.Search(search_rects[i].min, search_rects[i].max,
+                            MySearchCallback, NULL);
+    // printf("Search resulted in %d hits\n", nhits);
 
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  std::cout << "Searching time: " << duration.count() << " nanoseconds\n"
-            << "Average look up time: "
-            << duration.count() / search_rects.size() << " nanoseconds"
-            << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    std::cout << "Searching time: " << duration.count() << " nanoseconds\n"
+              << "Average look up time: "
+              << duration.count() / search_rects.size() << " nanoseconds"
+              << std::endl;
 
-  return 0;
+    return 0;
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-INPUT_FILE='NE.txt'
+INPUT_FILE='test.txt'
 
 echo "Run RTree"
-./test_rtree "../$INPUT_FILE"
+make && ./test_rtree "../$INPUT_FILE"
