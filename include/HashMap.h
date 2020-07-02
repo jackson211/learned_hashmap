@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 
 #include <cstddef>
 
@@ -71,7 +72,7 @@ public:
         delete[] table;
     }
 
-    unsigned long hash_function(long double value)
+    int hash_function(long double value)
     {
         return _model.template predict<int>(value) - MIN;
     }
@@ -160,6 +161,56 @@ public:
             temp = temp->getNext();
         }
         return false;
+    }
+
+    void rangeSearch(long double *min, long double *max,
+                     std::vector<Entry> *result)
+    {
+        assert(min[0] <= max[0]);
+        assert(min[1] <= max[1]);
+
+        long double min_x, min_y, max_y, max_x;
+        if (sort_by_lat)
+        {
+            min_x = min[0]; // lat
+            max_x = max[0];
+            min_y = min[1]; // lon
+            max_y = max[1];
+        }
+        else
+        {
+            min_x = min[1]; // lon
+            max_x = max[1];
+            min_y = min[0]; // lat
+            max_y = max[0];
+        }
+        long double x_range = abs(max_x - min_x);
+        long double y_range = abs(max_y - min_y);
+        int min_hashKey = hash_function(min_x);
+        int max_hashKey = hash_function(max_x);
+
+        if (min_hashKey < 0)
+            min_hashKey = 0;
+        if (max_hashKey > Capacity)
+            max_hashKey = Capacity - 1;
+        if (min_hashKey > max_hashKey)
+            std::swap(min_hashKey, max_hashKey);
+
+        std::cout << x_range << " " << y_range << " " << min_hashKey << " "
+                  << max_hashKey << std::endl;
+
+        for (size_t i = min_hashKey; i < max_hashKey + 1; i++)
+        {
+            HashNode<K, Entry> *temp = table[i];
+            while (temp != NULL)
+            {
+                Entry candidate = temp->getValue();
+                if (((candidate.lon - max_y) * (candidate.lon - min_y) <= 0) &&
+                    ((candidate.lat - max_x) * (candidate.lat - min_x) <= 0))
+                    result->push_back(candidate);
+                temp = temp->getNext();
+            }
+        }
     }
 
     void resize(size_t newCapacity)
