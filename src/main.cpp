@@ -209,18 +209,17 @@ int main(int argc, char *argv[])
 
     std::cout << "\n-RANGE QUERY";
 
-    long double min[2] = {0.21, 0.2};
-    long double max[2] = {0.211, 0.22};
+    long double min[2] = {0.395, 0.398};
+    long double max[2] = {0.4, 0.41};
     std::cout << "\n  Search range: {min_point: (" << min[0] << "," << min[1]
               << "), max_point: (" << max[0] << "," << max[1] << ")}";
 
     std::vector<Entry> result;
-    hashmap.rangeSearch(min, max, &result);
+    bool found_result = hashmap.rangeSearch(min, max, &result);
 
-    std::cout << "\n  Search result: " << result.size() << std::endl;
-
-    if (result.size() > 0)
+    if (found_result)
     {
+        std::cout << "  Search result: " << result.size() << std::endl;
         for (size_t i = 0; i < result.size(); i++)
         {
             std::cout << "    " << result[i].id << " " << result[i].lat << " "

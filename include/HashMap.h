@@ -163,13 +163,15 @@ public:
         return false;
     }
 
-    void rangeSearch(long double *min, long double *max,
+    bool rangeSearch(long double *min, long double *max,
                      std::vector<Entry> *result)
     {
         assert(min[0] <= max[0]);
         assert(min[1] <= max[1]);
 
         long double min_x, min_y, max_y, max_x;
+
+        // Rearrange x and y range if the data is sort by latitude
         if (sort_by_lat)
         {
             min_x = min[0]; // lat
@@ -184,11 +186,13 @@ public:
             min_y = min[0]; // lat
             max_y = max[0];
         }
-        long double x_range = abs(max_x - min_x);
-        long double y_range = abs(max_y - min_y);
+        long double x_range = max_x - min_x;
+        long double y_range = max_y - min_y;
         int min_hashKey = hash_function(min_x);
         int max_hashKey = hash_function(max_x);
 
+        if (min_hashKey > Capacity)
+            return false;
         if (min_hashKey < 0)
             min_hashKey = 0;
         if (max_hashKey > Capacity)
@@ -196,8 +200,9 @@ public:
         if (min_hashKey > max_hashKey)
             std::swap(min_hashKey, max_hashKey);
 
-        std::cout << x_range << " " << y_range << " " << min_hashKey << " "
-                  << max_hashKey << std::endl;
+        std::cout << "\n  x_range: " << x_range << " y_range: " << y_range
+                  << " min_HashKey: " << min_hashKey
+                  << " max_HashKey: " << max_hashKey << std::endl;
 
         for (size_t i = min_hashKey; i < max_hashKey + 1; i++)
         {
@@ -211,6 +216,10 @@ public:
                 temp = temp->getNext();
             }
         }
+
+        if (result->empty())
+            return false;
+        return true;
     }
 
     void resize(size_t newCapacity)

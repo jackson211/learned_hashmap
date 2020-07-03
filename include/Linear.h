@@ -85,7 +85,7 @@ namespace model
 
         template <typename V = int> V predict(T x)
         {
-            return x * _slope + _intercept;
+            return x * _slope + _intercept - (x < 0);
         }
 
         template <typename V = int>
