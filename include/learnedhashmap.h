@@ -13,57 +13,84 @@
 #include <cstddef>
 
 // Hash node class template
-template <typename K, typename V> class HashNode
+template <typename KeyType, typename ValueType> class HashNode
 {
 public:
     HashNode();
-    HashNode(const K &key, const V &value)
+    HashNode(const KeyType &key, const ValueType &value)
         : _key(key), _value(value), _next(NULL)
     {
     }
 
-    K getKey() const { return _key; }
+    KeyType getKey() const { return _key; }
 
-    V getValue() const { return _value; }
+    ValueType getValue() const { return _value; }
 
-    void setValue(V value) { _value = value; }
+    void setValue(ValueType value) { _value = value; }
 
     HashNode *getNext() const { return _next; }
 
     void setNext(HashNode *next) { _next = next; }
 
 private:
-    K _key;
-    V _value;
+    KeyType _key;
+    ValueType _value;
     HashNode *_next;
     HashNode(const HashNode &);
     HashNode &operator=(const HashNode &);
 };
 
-// HashMap class
-template <typename K, typename ModelType> class HashMap
+// LearnedHashMap class
+template <typename KeyType, typename ValueType, typename ModelType>
+class LearnedHashMap
 {
 public:
-    HashMap(ModelType &model, bool &sort_order, const int MIN_PRED_VALUE,
-            const int MAX_PRED_VALUE)
-        : _model(model), sort_by_lat(sort_order), MIN(MIN_PRED_VALUE),
-          MAX(MAX_PRED_VALUE)
+    LearnedHashMap(ModelType &model, bool &sort_order, const int MIN_PRED_VALUE,
+                   const int MAX_PRED_VALUE)
+        : _model(model), sort_by_lat(sort_order), MIN_INDEX(MIN_PRED_VALUE),
+          MAX_INDEX(MAX_PRED_VALUE)
     {
-        Capacity = MAX_PRED_VALUE - MIN_PRED_VALUE + 1;
-        table = new HashNode<K, Entry> *[Capacity];
+        Capacity = MAX_INDEX - MIN_INDEX + 1;
+        table = new HashNode<KeyType, ValueType> *[Capacity];
         for (size_t i = 0; i < Capacity; i++)
             table[i] = NULL;
     }
 
-    ~HashMap()
+    LearnedHashMap(bool &sort_order, const std::vector<long double> train_x,
+                   const std::vector<long double> train_y)
+        : sort_by_lat(sort_order)
+    {
+        // Train model
+        _model.fit(train_x, train_y);
+        std::vector<int> pred_result =
+            _model.template predict_list<int>(train_x);
+        MAX_INDEX = *std::max_element(pred_result.begin(), pred_result.end());
+        MIN_INDEX = *std::min_element(pred_result.begin(), pred_result.end());
+        std::cout << "  -TRAIN MODEL\n    Training on Linear model\n"
+                  << "    Slope: " << _model.getSlope()
+                  << ", Intercept: " << _model.getIntercept()
+                  << "\n    Prediction:{ Max: " << MAX_INDEX
+                  << ", Min: " << MIN_INDEX
+                  << ", Max-Min: " << MAX_INDEX - MIN_INDEX + 1 << " }"
+                  << std::endl;
+
+        // Initialize table
+        Capacity = MAX_INDEX - MIN_INDEX + 1;
+        table = new HashNode<KeyType, ValueType> *[Capacity];
+        size_t i;
+        for (i = 0; i < Capacity; i++)
+            table[i] = NULL;
+    }
+
+    ~LearnedHashMap()
     {
         // destroy all buckets one by one
         for (size_t i = 0; i < Capacity; ++i)
         {
-            HashNode<K, Entry> *entry = table[i];
+            HashNode<KeyType, ValueType> *entry = table[i];
             while (entry != NULL)
             {
-                HashNode<K, Entry> *prev = entry;
+                HashNode<KeyType, ValueType> *prev = entry;
                 entry = entry->getNext();
                 delete prev;
             }
@@ -72,17 +99,19 @@ public:
         delete[] table;
     }
 
+    size_t getCapacity() const { return Capacity; }
+
     int hash_function(long double value)
     {
-        return _model.template predict<int>(value) - MIN;
+        return _model.template predict<int>(value) - MIN_INDEX;
     }
 
-    void insertNode(const Entry &entry)
+    void insertNode(const ValueType &entry)
     {
         unsigned long hashKey =
             hash_function(sort_by_lat ? entry.lat : entry.lon);
-        HashNode<K, Entry> *prev = NULL;
-        HashNode<K, Entry> *temp = table[hashKey];
+        HashNode<KeyType, ValueType> *prev = NULL;
+        HashNode<KeyType, ValueType> *temp = table[hashKey];
 
         while (temp != NULL)
         {
@@ -92,7 +121,7 @@ public:
 
         if (temp == NULL)
         {
-            temp = new HashNode<K, Entry>(hashKey, entry);
+            temp = new HashNode<KeyType, ValueType>(hashKey, entry);
             if (prev == NULL)
                 // insert as first bucket
                 table[hashKey] = temp;
@@ -104,33 +133,34 @@ public:
             temp->setValue(entry);
     }
 
-    bool getNode(const long double lat, const long double lon, Entry &value)
+    bool getNode(const long double lat, const long double lon, ValueType &value)
     {
         unsigned long hashKey = hash_function(sort_by_lat ? lat : lon);
-        if (hashKey <= Capacity)
+        if (hashKey > Capacity)
+            return false;
+
+        HashNode<KeyType, ValueType> *temp = table[hashKey];
+        while (temp != NULL)
         {
-            HashNode<K, Entry> *temp = table[hashKey];
-            while (temp != NULL)
+            if (temp->getValue().lon == lon)
             {
-                if (temp->getValue().lon == lon)
+                if (temp->getValue().lat == lat)
                 {
-                    if (temp->getValue().lat == lat)
-                    {
-                        value = temp->getValue();
-                        return true;
-                    }
+                    value = temp->getValue();
+                    return true;
                 }
-                temp = temp->getNext();
             }
+            temp = temp->getNext();
         }
+
         return false;
     }
 
     bool removeNode(const long double lat, const long double lon)
     {
         unsigned long hashKey = hash_function(sort_by_lat ? lat : lon);
-        HashNode<K, Entry> *prev = NULL;
-        HashNode<K, Entry> *temp = table[hashKey];
+        HashNode<KeyType, ValueType> *prev = NULL;
+        HashNode<KeyType, ValueType> *temp = table[hashKey];
 
         while (temp != NULL)
         {
@@ -147,7 +177,8 @@ public:
                     }
                     else
                     {
-                        HashNode<K, Entry> *next_value = temp->getNext();
+                        HashNode<KeyType, ValueType> *next_value =
+                            temp->getNext();
                         if (prev == NULL)
                             table[hashKey] = next_value;
                         else
@@ -164,7 +195,7 @@ public:
     }
 
     bool rangeSearch(long double *min, long double *max,
-                     std::vector<Entry> *result)
+                     std::vector<ValueType> *result)
     {
         assert(min[0] <= max[0]);
         assert(min[1] <= max[1]);
@@ -206,10 +237,10 @@ public:
 
         for (size_t i = min_hashKey; i < max_hashKey + 1; i++)
         {
-            HashNode<K, Entry> *temp = table[i];
+            HashNode<KeyType, ValueType> *temp = table[i];
             while (temp != NULL)
             {
-                Entry candidate = temp->getValue();
+                ValueType candidate = temp->getValue();
                 if (((candidate.lon - max_y) * (candidate.lon - min_y) <= 0) &&
                     ((candidate.lat - max_x) * (candidate.lat - min_x) <= 0))
                     result->push_back(candidate);
@@ -224,7 +255,8 @@ public:
 
     void resize(size_t newCapacity)
     {
-        HashNode<K, Entry> **newTable = new HashNode<K, Entry> *[newCapacity];
+        HashNode<KeyType, ValueType> **newTable =
+            new HashNode<KeyType, ValueType> *[newCapacity];
         memcpy(newTable, table, Capacity * sizeof(size_t));
 
         Capacity = newCapacity;
@@ -238,7 +270,7 @@ public:
 
         for (size_t i = 0; i < Capacity; ++i)
         {
-            HashNode<K, Entry> *entry = table[i];
+            HashNode<KeyType, ValueType> *entry = table[i];
             if (entry == NULL)
             {
                 mp[i] = 0;
@@ -279,7 +311,7 @@ public:
         std::cout << "{" << std::endl;
         for (size_t i = 0; i < Capacity; ++i)
         {
-            HashNode<K, Entry> *temp = table[i];
+            HashNode<KeyType, ValueType> *temp = table[i];
             bool isFirst = true;
             if (temp != NULL)
             {
@@ -287,11 +319,11 @@ public:
                 {
                     if (isFirst)
                     {
-                        K key = temp->getKey();
+                        KeyType key = temp->getKey();
                         std::cout << key << ": ";
                         isFirst = false;
                     }
-                    Entry item = temp->getValue();
+                    ValueType item = temp->getValue();
                     std::cout << "(" << item.id << "," << item.lat << ","
                               << item.lon << ") -> ";
                     temp = temp->getNext();
@@ -303,14 +335,14 @@ public:
     }
 
 private:
-    HashNode<K, Entry> **table;
+    HashNode<KeyType, ValueType> **table;
     size_t Capacity;
     ModelType _model;
     bool sort_by_lat;
-    const int MIN;
-    const int MAX;
-    HashMap(const HashMap &other);
-    const HashMap &operator=(const HashMap &other);
+    int MIN_INDEX;
+    int MAX_INDEX;
+    LearnedHashMap(const LearnedHashMap &other);
+    const LearnedHashMap &operator=(const LearnedHashMap &other);
 };
 
 #endif

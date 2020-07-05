@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 
 #include "../include/entry.h"
-#include "../include/hashmap.h"
+#include "../include/learnedhashmap.h"
 #include "../include/linear.h"
 #include "../include/piecewise.h"
 #include "../include/utils.h"
@@ -23,14 +23,13 @@ int main(int argc, char *argv[])
      * Reading data from file
      *
      */
-
     if (argc < 2)
     {
         std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
         return 1;
     }
 
-    std::vector<Entry> data;
+    std::vector<Point> data;
     bool sort_by_lat = utils::read_data<long double>(argv[1], &data);
     std::string sort_text =
         sort_by_lat ? std::string("lat") : std::string("lon");
@@ -49,7 +48,6 @@ int main(int argc, char *argv[])
      *  train_y: vector of long double of label values
      *
      */
-
     DataVec lats;
     DataVec lons;
     DataVec test_set;
@@ -65,85 +63,34 @@ int main(int argc, char *argv[])
         test_set.push_back(lon);
         train_y.push_back(i);
     }
-
-    /*
-     *
-     * Training linear model
-     *
-     *    train_x is decided by variance of latitudes or longitudes which we
-     * wish to train on the column that has more spreaded data distribution.
-     *
-     */
-
     DataVec train_x = sort_by_lat ? lats : lons;
-    auto start = std::chrono::high_resolution_clock::now();
-
-    LinearModel model(train_x, train_y);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    std::cout << "\n-TRAIN MODEL\nTraining on Linear model\n"
-              << "Training time: " << duration.count() << " nanoseconds\n"
-              << "Slope: " << model.getSlope()
-              << ", Intercept: " << model.getIntercept() << std::endl;
 
     /*
      *
-     * Prediction
+     * LearnedHashMap
      *
-     *    Predicted value in default is int.
-     *    Maximum and minimum predicted value is required to calculate the range
-     *    of data indexes.
-     *
-     */
-
-    std::vector<int> pred_result = model.predict_list<int>(train_x);
-    const int MAX_PRED_VALUE =
-        *std::max_element(pred_result.begin(), pred_result.end());
-    const int MIN_PRED_VALUE =
-        *std::min_element(pred_result.begin(), pred_result.end());
-    std::cout << "Prediction:{ Max: " << MAX_PRED_VALUE
-              << ", Min: " << MIN_PRED_VALUE
-              << ", Max-Min: " << MAX_PRED_VALUE - MIN_PRED_VALUE + 1 << " }"
-              << std::endl;
-
-    /*
-     *
-     * Piecewise Model
-     *
-     */
-
-    // PiecewiseModel pm;
-    // pm.fit(train_x, train_y);
-    // std::vector<int> pred_result = pm.predict_list<int>(train_x);
-
-    /*
-     *
-     * HashMap
-     *
-     *    Building HashMap using hash key that from model predicted value.
+     *    Building LearnedHashMap using hash key that from model predicted
+    value.
      *    Size of the table is (MAX_PRED_VALUE - MIN_PRED_VALUE + 1).
      *    Every predicted value have to subtract by the MIN_PRED_VALUE to get
     rid
      *    of negative value and keep every index within size of the table.
      *
      */
-
     std::cout << "\n-BUILD HASHMAP" << std::endl;
 
-    start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
 
-    HashMap<int, LinearModel> hashmap(model, sort_by_lat, MIN_PRED_VALUE,
-                                      MAX_PRED_VALUE);
+    LearnedHashMap<int, Point, LinearModel> hashmap(sort_by_lat, train_x,
+                                                    train_y);
     for (i = 0; i < data.size(); i++)
         hashmap.insertNode(data[i]);
 
-    end = std::chrono::high_resolution_clock::now();
-    duration =
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration =
         std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
-    std::cout << "HashMap insertion time: " << duration.count()
+    std::cout << "LearnedHashMap insertion time: " << duration.count()
               << " nanoseconds\nHashmap Stats:";
     bool full_info = false;
     hashmap.display_stats(full_info);
@@ -154,9 +101,8 @@ int main(int argc, char *argv[])
      * Test look up performance
      *
      */
-
     // First look up loop for recording performance
-    Entry tmp_result;
+    Point tmp_result;
     start = std::chrono::high_resolution_clock::now();
 
     for (i = 0; i < test_set.size(); i += 2)
@@ -168,7 +114,7 @@ int main(int argc, char *argv[])
 
     // Second look up loop for testing accuracy
     int found = 0;
-    std::vector<Entry> lookup_results;
+    std::vector<Point> lookup_results;
     for (i = 0; i < test_set.size(); i += 2)
     {
         bool tmp_found =
@@ -192,8 +138,9 @@ int main(int argc, char *argv[])
      * Print stats
      *
      */
-    std::cout << "\n-RESULTS\nHashMap look up results:\n  Found: " << found
-              << "\n  True Positives: " << true_positives << "\n  Precision: "
+    std::cout << "\n-RESULTS\nLearnedHashMap look up results:\n  Found: "
+              << found << "\n  True Positives: " << true_positives
+              << "\n  Precision: "
               << true_positives / (double)data.size() * 100.0 << "% "
               << "\n  Recall: " << true_positives / (double)found * 100.0
               << "% "
@@ -206,7 +153,6 @@ int main(int argc, char *argv[])
      * Range query
      *
      */
-
     std::cout << "\n-RANGE QUERY";
 
     long double min[2] = {0.395, 0.398};
@@ -214,7 +160,7 @@ int main(int argc, char *argv[])
     std::cout << "\n  Search range: {min_point: (" << min[0] << "," << min[1]
               << "), max_point: (" << max[0] << "," << max[1] << ")}";
 
-    std::vector<Entry> result;
+    std::vector<Point> result;
     bool found_result = hashmap.rangeSearch(min, max, &result);
 
     if (found_result)
@@ -230,6 +176,21 @@ int main(int argc, char *argv[])
     {
         std::cout << " No results found" << std::endl;
     }
+
+    /*
+     *
+     * Line segments
+     *
+     */
+    std::cout << "\n-Objects(line segments, retangles)";
+
+    Object line(0, 0, 1, 1);
+
+    std::cout << "\nBBOX: " << std::get<0>(line.getBbox())
+              << std::get<1>(line.getBbox()) << std::get<2>(line.getBbox())
+              << std::get<3>(line.getBbox())
+              << "Centroid: " << line.getCentroid().first << " "
+              << line.getCentroid().second << std::endl;
 
     return 0;
 }

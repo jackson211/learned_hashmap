@@ -29,7 +29,7 @@ namespace utils
         };
     }
 
-    void reset_id(std::vector<Entry> *data)
+    void reset_id(std::vector<Point> *data)
     {
         for (size_t i = 0; i < data->size(); i++)
         {
@@ -38,30 +38,30 @@ namespace utils
         }
     }
 
-    void remove_repeated(std::vector<Entry> *data)
+    void remove_repeated(std::vector<Point> *data)
     {
         data->erase(std::unique(data->begin(), data->end(),
-                                [](const Entry &lhs, const Entry &rhs) {
+                                [](const Point &lhs, const Point &rhs) {
                                     return lhs.lon == rhs.lon &&
                                            lhs.lat == rhs.lat;
                                 }),
                     data->end());
     }
 
-    void sort_data(bool sort_by_lat, std::vector<Entry> *data)
+    void sort_data(bool sort_by_lat, std::vector<Point> *data)
     {
         sort_by_lat ? std::sort(data->begin(), data->end(),
-                                [](const Entry &lhs, const Entry &rhs) {
+                                [](const Point &lhs, const Point &rhs) {
                                     return lhs.lat < rhs.lat;
                                 })
                     : std::sort(data->begin(), data->end(),
-                                [](const Entry &lhs, const Entry &rhs) {
+                                [](const Point &lhs, const Point &rhs) {
                                     return lhs.lon < rhs.lon;
                                 });
     }
 
     template <typename T>
-    bool read_data(std ::string const &filename, std::vector<Entry> *data)
+    bool read_data(std ::string const &filename, std::vector<Point> *data)
     {
         is_valid_file(filename);
         std::cout << "Reading from " << filename << std::endl;
@@ -77,7 +77,7 @@ namespace utils
             std::stringstream ss(line);
             if (!(ss >> lat >> lon))
                 break;
-            data->push_back(Entry{lat, lon});
+            data->push_back(Point{lat, lon});
             lat_counter.insert(lat);
             lon_counter.insert(lon);
         }
