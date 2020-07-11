@@ -16,21 +16,50 @@ typedef std::vector<long double> DataVec;
 typedef model::Linear<long double> LinearModel;
 typedef model::Piecewise<long double> PiecewiseModel;
 
-int main(int argc, char *argv[])
+template <typename KeyType, typename ValueType, typename ModelType>
+LearnedHashMap<KeyType, ValueType, ModelType>
+build_hashmap(const bool &sort_by_lat, const DataVec &train_x,
+              const DataVec &train_y, const std::vector<Point> &data)
 {
     /*
      *
-     * Reading data from file
+     * LearnedHashMap
+     *
+     *    Building LearnedHashMap using hash key that from model predicted
+    value.
+     *    Size of the table is (MAX_PRED_VALUE - MIN_PRED_VALUE + 1).
+     *    Every predicted value have to subtract by the MIN_PRED_VALUE to get
+    rid
+     *    of negative value and keep every index within size of the table.
      *
      */
-    if (argc < 2)
-    {
-        std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
-        return 1;
-    }
+    std::cout << "\n-BUILD HASHMAP" << std::endl;
 
+    auto start = std::chrono::high_resolution_clock::now();
+
+    LearnedHashMap<KeyType, ValueType, ModelType> hashmap(sort_by_lat, train_x,
+                                                          train_y);
+    for (int i = 0; i < data.size(); i++)
+        hashmap.insertNode(data[i]);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+    std::cout << "LearnedHashMap insertion time: " << duration.count()
+              << " nanoseconds\nHashmap Stats:";
+
+    bool full_info = false;
+    hashmap.display_stats(full_info);
+    // hashmap.display();
+
+    return hashmap;
+}
+
+void point_data_flow(std ::string const &filename)
+{
     std::vector<Point> data;
-    bool sort_by_lat = utils::read_data<long double>(argv[1], &data);
+    bool sort_by_lat = utils::read_data<long double>(filename, &data);
     std::string sort_text =
         sort_by_lat ? std::string("lat") : std::string("lon");
 
@@ -65,36 +94,10 @@ int main(int argc, char *argv[])
     }
     DataVec train_x = sort_by_lat ? lats : lons;
 
-    /*
-     *
-     * LearnedHashMap
-     *
-     *    Building LearnedHashMap using hash key that from model predicted
-    value.
-     *    Size of the table is (MAX_PRED_VALUE - MIN_PRED_VALUE + 1).
-     *    Every predicted value have to subtract by the MIN_PRED_VALUE to get
-    rid
-     *    of negative value and keep every index within size of the table.
-     *
-     */
-    std::cout << "\n-BUILD HASHMAP" << std::endl;
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    LearnedHashMap<int, Point, LinearModel> hashmap(sort_by_lat, train_x,
-                                                    train_y);
-    for (i = 0; i < data.size(); i++)
-        hashmap.insertNode(data[i]);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-
-    std::cout << "LearnedHashMap insertion time: " << duration.count()
-              << " nanoseconds\nHashmap Stats:";
-    bool full_info = false;
-    hashmap.display_stats(full_info);
-    // hashmap.display();
+    // Building hashmap
+    LearnedHashMap<int, Point, LinearModel> hashmap =
+        build_hashmap<int, Point, LinearModel>(sort_by_lat, train_x, train_y,
+                                               data);
 
     /*
      *
@@ -103,13 +106,13 @@ int main(int argc, char *argv[])
      */
     // First look up loop for recording performance
     Point tmp_result;
-    start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
 
     for (i = 0; i < test_set.size(); i += 2)
-        hashmap.getNode(test_set[i], test_set[i + 1], tmp_result);
+        hashmap.pointSearch(test_set[i], test_set[i + 1], tmp_result);
 
-    end = std::chrono::high_resolution_clock::now();
-    duration =
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration =
         std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
     // Second look up loop for testing accuracy
@@ -118,7 +121,7 @@ int main(int argc, char *argv[])
     for (i = 0; i < test_set.size(); i += 2)
     {
         bool tmp_found =
-            hashmap.getNode(test_set[i], test_set[i + 1], tmp_result);
+            hashmap.pointSearch(test_set[i], test_set[i + 1], tmp_result);
         if (tmp_found)
         {
             found++;
@@ -177,20 +180,81 @@ int main(int argc, char *argv[])
         std::cout << " No results found" << std::endl;
     }
 
+    Point tmp_point;
+    bool found_point = hashmap.approximateSearch(0.39, 0.41, tmp_point);
+    std::cout << "Found point " << found_point << std::endl;
+}
+
+void object_data_flow(std::string const &filename)
+{
+    std::vector<Object> objects;
+    utils::read_object_data<long double>(filename, &objects);
+
+    std::vector<Point> points;
+    size_t i;
+    for (i = 0; i < objects.size(); i++)
+    {
+        std::tuple<Point, Point> bbox = objects[i].getBbox();
+        Point Point_1 = std::get<0>(bbox);
+        Point Point_2 = std::get<1>(bbox);
+        points.push_back(Point_1);
+        points.push_back(Point_2);
+    }
+
     /*
      *
-     * Line segments
+     * Setting up train and test data
+     *
+     *  lats: only contains latitudes
+     *  lons: only contains longitudes
+     *  test_set: contains both latitudes and longitudes in continous order
+     *  train_y: vector of long double of label values
      *
      */
-    std::cout << "\n-Objects(line segments, retangles)";
+    std::set<long double> lat_counter;
+    std::set<long double> lon_counter;
+    DataVec lats;
+    DataVec lons;
+    DataVec test_set;
+    DataVec train_y;
+    for (i = 0; i < points.size(); i++)
+    {
+        long double lat = points[i].lat;
+        long double lon = points[i].lon;
+        lats.push_back(lat);
+        lons.push_back(lon);
+        test_set.push_back(lat);
+        test_set.push_back(lon);
+        train_y.push_back(i);
+        lat_counter.insert(lat);
+        lon_counter.insert(lon);
+    }
+    bool sort_by_lat =
+        (lat_counter.size() >= lon_counter.size()) ? true : false;
+    DataVec train_x = sort_by_lat ? lats : lons;
 
-    Object line(0, 0, 1, 1);
+    // Building hashmap
+    LearnedHashMap<int, Point, LinearModel> obj_hashmap =
+        build_hashmap<int, Point, LinearModel>(sort_by_lat, train_x, train_y,
+                                               points);
+}
 
-    std::cout << "\nBBOX: " << std::get<0>(line.getBbox())
-              << std::get<1>(line.getBbox()) << std::get<2>(line.getBbox())
-              << std::get<3>(line.getBbox())
-              << "Centroid: " << line.getCentroid().first << " "
-              << line.getCentroid().second << std::endl;
+int main(int argc, char *argv[])
+{
+    /*
+     *
+     * Reading data from file
+     *
+     */
+    if (argc < 2)
+    {
+        std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
+        return 1;
+    }
+
+    point_data_flow(argv[1]);
+
+    // object_data_flow(argv[1]);
 
     return 0;
 }

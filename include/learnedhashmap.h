@@ -45,18 +45,11 @@ template <typename KeyType, typename ValueType, typename ModelType>
 class LearnedHashMap
 {
 public:
-    LearnedHashMap(ModelType &model, bool &sort_order, const int MIN_PRED_VALUE,
-                   const int MAX_PRED_VALUE)
-        : _model(model), sort_by_lat(sort_order), MIN_INDEX(MIN_PRED_VALUE),
-          MAX_INDEX(MAX_PRED_VALUE)
-    {
-        Capacity = MAX_INDEX - MIN_INDEX + 1;
-        table = new HashNode<KeyType, ValueType> *[Capacity];
-        for (size_t i = 0; i < Capacity; i++)
-            table[i] = NULL;
-    }
+    LearnedHashMap(const LearnedHashMap &other);
+    const LearnedHashMap &operator=(const LearnedHashMap &other);
 
-    LearnedHashMap(bool &sort_order, const std::vector<long double> train_x,
+    LearnedHashMap(const bool &sort_order,
+                   const std::vector<long double> train_x,
                    const std::vector<long double> train_y)
         : sort_by_lat(sort_order)
     {
@@ -79,6 +72,17 @@ public:
         table = new HashNode<KeyType, ValueType> *[Capacity];
         size_t i;
         for (i = 0; i < Capacity; i++)
+            table[i] = NULL;
+    }
+
+    LearnedHashMap(ModelType &model, bool &sort_order, const int MIN_PRED_VALUE,
+                   const int MAX_PRED_VALUE)
+        : _model(model), sort_by_lat(sort_order), MIN_INDEX(MIN_PRED_VALUE),
+          MAX_INDEX(MAX_PRED_VALUE)
+    {
+        Capacity = MAX_INDEX - MIN_INDEX + 1;
+        table = new HashNode<KeyType, ValueType> *[Capacity];
+        for (size_t i = 0; i < Capacity; i++)
             table[i] = NULL;
     }
 
@@ -133,7 +137,8 @@ public:
             temp->setValue(entry);
     }
 
-    bool getNode(const long double lat, const long double lon, ValueType &value)
+    bool pointSearch(const long double lat, const long double lon,
+                     ValueType &value)
     {
         unsigned long hashKey = hash_function(sort_by_lat ? lat : lon);
         if (hashKey > Capacity)
@@ -152,8 +157,41 @@ public:
             }
             temp = temp->getNext();
         }
-
         return false;
+    }
+
+    bool approximateSearch(const long double lat, const long double lon,
+                           ValueType &value)
+    {
+        // if (pointSearch(lat, lon, value) == true)
+        //    return true;
+
+        unsigned long hashKey = hash_function(sort_by_lat ? lat : lon);
+        std::cout << "Hashkey: " << hashKey << std::endl;
+
+        HashNode<KeyType, ValueType> *temp = table[hashKey];
+
+        unsigned long i = hashKey;
+        while (temp == NULL)
+        {
+            i++;
+            temp = table[i];
+            std::cout << "i: " << i << std::endl;
+        }
+        std::cout << temp->getValue().id << " " << temp->getValue().lat << " "
+                  << temp->getValue().lon << std::endl;
+
+        temp = table[hashKey];
+        i = hashKey;
+        while (temp == NULL)
+        {
+            i--;
+            temp = table[i];
+            std::cout << "i: " << i << std::endl;
+        }
+        std::cout << temp->getValue().id << " " << temp->getValue().lat << " "
+                  << temp->getValue().lon << std::endl;
+        return true;
     }
 
     bool removeNode(const long double lat, const long double lon)
@@ -264,7 +302,7 @@ public:
         table = newTable;
     }
 
-    void display_stats(bool showFullStats)
+    void display_stats(bool showFullStats) const
     {
         std::unordered_map<unsigned long, int> mp;
 
@@ -306,7 +344,7 @@ public:
                   << std::endl;
     }
 
-    void display()
+    void display() const
     {
         std::cout << "{" << std::endl;
         for (size_t i = 0; i < Capacity; ++i)
@@ -341,8 +379,6 @@ private:
     bool sort_by_lat;
     int MIN_INDEX;
     int MAX_INDEX;
-    LearnedHashMap(const LearnedHashMap &other);
-    const LearnedHashMap &operator=(const LearnedHashMap &other);
 };
 
 #endif

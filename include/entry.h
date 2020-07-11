@@ -4,6 +4,8 @@
 #define ENTRY_H
 
 #include <cstdint>
+#include <iostream>
+#include <tuple>
 #include <vector>
 
 typedef uint64_t id_type;
@@ -14,24 +16,45 @@ struct Point
     id_type id;
 
     void setId(id_type i) { id = i; }
-
-    bool operator==(const Point &t) const
-    {
-        return (this->lat == t.lat && this->lon == t.lon);
-    }
 };
+
+const bool operator==(const Point &lhs, const Point &rhs)
+{
+    return (lhs.lat == rhs.lat && lhs.lon == rhs.lon);
+}
 
 class Object
 {
 public:
+    Object(std::vector<Point> points)
+    {
+        long double min_x = points[0].lat;
+        long double min_y = points[0].lon;
+        long double max_x = points[0].lat;
+        long double max_y = points[0].lon;
+
+        for (auto &p : points)
+        {
+            if (p.lat < min_x)
+                min_x = p.lat;
+            else if (p.lat > max_x)
+                max_x = p.lat;
+            if (p.lon < min_y)
+                min_y = p.lon;
+            else if (p.lon > max_y)
+                max_y = p.lon;
+        }
+
+        bbox = std::make_tuple(Point{min_x, min_y}, Point{max_x, max_y});
+        centroid = Point{(max_x - min_x) / 2.0, (max_y - min_y) / 2.0};
+    }
+
     Object(const long double &min_x, const long double &min_y,
            const long double &max_x, const long double &max_y)
-        : bbox({min_x, min_y, max_x, max_y})
+        : bbox(Point{min_x, min_y}, Point{max_x, max_y})
     {
         checkBounds(min_x, min_y, max_x, max_y);
-        centroid =
-            std::make_pair((std::get<0>(bbox) + std::get<2>(bbox)) / 2.0,
-                           (std::get<1>(bbox) + std::get<3>(bbox)) / 2.0);
+        centroid = Point{(max_x - min_x) / 2.0, (max_y - min_y) / 2.0};
     }
 
     ~Object() = default;
@@ -42,31 +65,17 @@ public:
         assert(min_x <= max_x && min_y <= max_y);
     }
 
-    std::tuple<long double, long double, long double, long double>
-    getBbox() const
-    {
-        return bbox;
-    }
+    std::tuple<Point, Point> getBbox() const { return bbox; }
 
-    void setBbox(const long double &min_x, const long double &min_y,
-                 const long double &max_x, const long double &max_y)
-    {
-        checkBounds(min_x, min_y, max_x, max_y);
-        bbox = {min_x, min_y, max_x, max_y};
-        centroid =
-            std::make_pair((std::get<0>(bbox) + std::get<2>(bbox)) / 2.0,
-                           (std::get<1>(bbox) + std::get<3>(bbox)) / 2.0);
-    }
-
-    std::pair<long double, long double> getCentroid() const { return centroid; }
+    Point getCentroid() const { return centroid; }
 
     id_type getId() const { return id; }
 
     void setId(id_type i) { id = i; }
 
 private:
-    std::tuple<long double, long double, long double, long double> bbox;
-    std::pair<long double, long double> centroid;
+    std::tuple<Point, Point> bbox;
+    Point centroid;
     id_type id;
 };
 

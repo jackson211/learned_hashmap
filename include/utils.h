@@ -14,6 +14,7 @@
 #include <string>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <unordered_map>
 #include <vector>
 
 namespace utils
@@ -61,6 +62,42 @@ namespace utils
     }
 
     template <typename T>
+    bool read_object_data(std ::string const &filename,
+                          std::vector<Object> *data)
+    {
+        is_valid_file(filename);
+        std::cout << "Reading from " << filename << std::endl;
+        std::fstream in(filename);
+        std::string line;
+        int obj_id;
+        T lat, lon;
+
+        std::unordered_map<int, std::vector<Point>> object_map;
+
+        while (std::getline(in, line))
+        {
+            std::stringstream ss(line);
+            if (!(ss >> obj_id >> lat >> lon))
+                break;
+            object_map[obj_id].push_back(Point{lat, lon});
+        }
+
+        for (auto &obj : object_map)
+        {
+            std::vector<Point> obj_points;
+            for (auto &i : obj.second)
+            {
+                obj_points.push_back(Point{i.lat, i.lon});
+            }
+            Object temp_obj(obj_points);
+            temp_obj.setId(obj.first);
+            data->push_back(temp_obj);
+        }
+
+        return true;
+    }
+
+    template <typename T>
     bool read_data(std ::string const &filename, std::vector<Point> *data)
     {
         is_valid_file(filename);
@@ -69,8 +106,7 @@ namespace utils
         std::string line;
         std::set<T> lat_counter;
         std::set<T> lon_counter;
-        T lat;
-        T lon;
+        T lat, lon;
 
         while (std::getline(in, line))
         {
@@ -91,6 +127,13 @@ namespace utils
         reset_id(data);
 
         return sort_by_lat;
+    }
+
+    void preprocess(std::vector<Point> *data, bool sort_by_lat = true)
+    {
+        sort_data(sort_by_lat, data);
+        remove_repeated(data);
+        reset_id(data);
     }
 }; // namespace utils
 
