@@ -110,12 +110,12 @@ public:
         return _model.template predict<int>(value) - MIN_INDEX;
     }
 
-    void insertNode(const ValueType &entry)
+    void insertNode(const Point &entry)
     {
         unsigned long hashKey =
             hash_function(sort_by_lat ? entry.lat : entry.lon);
-        HashNode<KeyType, ValueType> *prev = NULL;
-        HashNode<KeyType, ValueType> *temp = table[hashKey];
+        HashNode<KeyType, Point> *prev = NULL;
+        HashNode<KeyType, Point> *temp = table[hashKey];
 
         while (temp != NULL)
         {
@@ -125,7 +125,35 @@ public:
 
         if (temp == NULL)
         {
-            temp = new HashNode<KeyType, ValueType>(hashKey, entry);
+            temp = new HashNode<KeyType, Point>(hashKey, entry);
+            if (prev == NULL)
+                // insert as first bucket
+                table[hashKey] = temp;
+            else
+                prev->setNext(temp);
+        }
+        else
+            // just update the value
+            temp->setValue(entry);
+    }
+
+    void insertNode(const std::pair<Point, Point> &entry)
+    {
+        Point p = entry.first;
+        unsigned long hashKey = hash_function(sort_by_lat ? p.lat : p.lon);
+        HashNode<KeyType, std::pair<Point, Point>> *prev = NULL;
+        HashNode<KeyType, std::pair<Point, Point>> *temp = table[hashKey];
+
+        while (temp != NULL)
+        {
+            prev = temp;
+            temp = temp->getNext();
+        }
+
+        if (temp == NULL)
+        {
+            temp =
+                new HashNode<KeyType, std::pair<Point, Point>>(hashKey, entry);
             if (prev == NULL)
                 // insert as first bucket
                 table[hashKey] = temp;
@@ -380,5 +408,4 @@ private:
     int MIN_INDEX;
     int MAX_INDEX;
 };
-
 #endif

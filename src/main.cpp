@@ -179,10 +179,6 @@ void point_data_flow(std ::string const &filename)
     {
         std::cout << " No results found" << std::endl;
     }
-
-    Point tmp_point;
-    bool found_point = hashmap.approximateSearch(0.39, 0.41, tmp_point);
-    std::cout << "Found point " << found_point << std::endl;
 }
 
 void object_data_flow(std::string const &filename)
@@ -190,15 +186,39 @@ void object_data_flow(std::string const &filename)
     std::vector<Object> objects;
     utils::read_object_data<long double>(filename, &objects);
 
+    std::set<long double> lat_counter;
+    std::set<long double> lon_counter;
     std::vector<Point> points;
+    std::vector<std::pair<Point, Point>> point_pairs;
     size_t i;
     for (i = 0; i < objects.size(); i++)
     {
         std::tuple<Point, Point> bbox = objects[i].getBbox();
-        Point Point_1 = std::get<0>(bbox);
-        Point Point_2 = std::get<1>(bbox);
-        points.push_back(Point_1);
-        points.push_back(Point_2);
+        id_type obj_id = objects[i].getId();
+        Point p1 = std::get<0>(bbox);
+        Point p2 = std::get<1>(bbox);
+        p1.setId(obj_id);
+        p2.setId(obj_id);
+        points.push_back(p1);
+        points.push_back(p2);
+        point_pairs.push_back(std::make_pair(p1, p2));
+
+        lat_counter.insert(p1.lat);
+        lon_counter.insert(p1.lon);
+        lat_counter.insert(p2.lat);
+        lon_counter.insert(p2.lon);
+    }
+    bool sort_by_lat =
+        (lat_counter.size() >= lon_counter.size()) ? true : false;
+
+    utils::sort_data(sort_by_lat, &points);
+    // Print point pairs
+    for (i = 0; i < point_pairs.size(); i++)
+    {
+        Point p1 = point_pairs[i].first;
+        Point p2 = point_pairs[i].second;
+        std::cout << p1.lat << " " << p1.lon << " " << p2.lat << " " << p2.lon
+                  << std::endl;
     }
 
     /*
@@ -211,8 +231,6 @@ void object_data_flow(std::string const &filename)
      *  train_y: vector of long double of label values
      *
      */
-    std::set<long double> lat_counter;
-    std::set<long double> lon_counter;
     DataVec lats;
     DataVec lons;
     DataVec test_set;
@@ -226,17 +244,54 @@ void object_data_flow(std::string const &filename)
         test_set.push_back(lat);
         test_set.push_back(lon);
         train_y.push_back(i);
-        lat_counter.insert(lat);
-        lon_counter.insert(lon);
     }
-    bool sort_by_lat =
-        (lat_counter.size() >= lon_counter.size()) ? true : false;
     DataVec train_x = sort_by_lat ? lats : lons;
 
     // Building hashmap
-    LearnedHashMap<int, Point, LinearModel> obj_hashmap =
-        build_hashmap<int, Point, LinearModel>(sort_by_lat, train_x, train_y,
-                                               points);
+    /* LearnedHashMap<int, std::pair<Point, Point>, LinearModel> obj_hashmap =
+     */
+    /*     build_hashmap<int, std::pair<Point, Point>, LinearModel>( */
+    /*         sort_by_lat, train_x, train_y, point_pairs); */
+
+    std::cout << "\n-BUILD HASHMAP" << std::endl;
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    LearnedHashMap<int, std::pair<Point, Point>, LinearModel> hashmap(
+        sort_by_lat, train_x, train_y);
+    for (int i = 0; i < point_pairs.size(); i++)
+        hashmap.insertNode(point_pairs[i]);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+    std::cout << "LearnedHashMap insertion time: " << duration.count()
+              << " nanoseconds\nHashmap Stats:";
+
+    bool full_info = true;
+    hashmap.display_stats(full_info);
+
+    /* Point tmp_point; */
+    /* long double s_lat = 144.961866; */
+    /* long double s_lon = -37.795042; */
+    /* std::cout << "Searching point: " << s_lat << " " << s_lon << std::endl;
+     */
+    /* bool found_point = obj_hashmap.approximateSearch(s_lat, s_lon,
+     * tmp_point); */
+    /* std::cout << "Found point " << found_point << std::endl; */
+
+    /* for (i = 0; i < objects.size(); i++) */
+    /* { */
+    /*     if (objects[i].getId() == 14) */
+    /*     { */
+    /*         std::tuple<Point, Point> box = objects[i].getBbox(); */
+    /*         std::cout << "14 parkville: " << std::get<0>(box).lat */
+    /*                   << std::get<0>(box).lon << ", " << std::get<1>(box).lat
+     */
+    /*                   << std::get<1>(box).lon << std::endl; */
+    /*     } */
+    /* } */
 }
 
 int main(int argc, char *argv[])
@@ -252,9 +307,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    point_data_flow(argv[1]);
+    // point_data_flow(argv[1]);
 
-    // object_data_flow(argv[1]);
+    object_data_flow(argv[1]);
 
     return 0;
 }
