@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <iostream>
-#include <tuple>
 #include <vector>
 
 typedef uint64_t id_type;
@@ -45,7 +44,7 @@ public:
                 max_y = p.lon;
         }
 
-        bbox = std::make_tuple(Point{min_x, min_y}, Point{max_x, max_y});
+        bbox = std::make_pair(Point{min_x, min_y}, Point{max_x, max_y});
         centroid = Point{(max_x - min_x) / 2.0, (max_y - min_y) / 2.0};
     }
 
@@ -65,7 +64,7 @@ public:
         assert(min_x <= max_x && min_y <= max_y);
     }
 
-    std::tuple<Point, Point> getBbox() const { return bbox; }
+    std::pair<Point, Point> getBbox() const { return bbox; }
 
     Point getCentroid() const { return centroid; }
 
@@ -74,9 +73,16 @@ public:
     void setId(id_type i) { id = i; }
 
 private:
-    std::tuple<Point, Point> bbox;
+    std::pair<Point, Point> bbox;
     Point centroid;
     id_type id;
 };
 
+std::ostream &operator<<(std::ostream &os, const Object &obj)
+{
+    std::pair<Point, Point> bbox = obj.getBbox();
+    os << "[min: " << bbox.first.lat << ", " << bbox.first.lon
+       << "max: " << bbox.second.lat << ", " << bbox.second.lon << "]";
+    return os;
+}
 #endif

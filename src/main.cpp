@@ -19,7 +19,7 @@ typedef model::Piecewise<long double> PiecewiseModel;
 template <typename KeyType, typename ValueType, typename ModelType>
 LearnedHashMap<KeyType, ValueType, ModelType>
 build_hashmap(const bool &sort_by_lat, const DataVec &train_x,
-              const DataVec &train_y, const std::vector<Point> &data)
+              const DataVec &train_y, const std::vector<ValueType> &data)
 {
     /*
      *
@@ -48,10 +48,6 @@ build_hashmap(const bool &sort_by_lat, const DataVec &train_x,
 
     std::cout << "LearnedHashMap insertion time: " << duration.count()
               << " nanoseconds\nHashmap Stats:";
-
-    bool full_info = false;
-    hashmap.display_stats(full_info);
-    // hashmap.display();
 
     return hashmap;
 }
@@ -212,14 +208,6 @@ void object_data_flow(std::string const &filename)
         (lat_counter.size() >= lon_counter.size()) ? true : false;
 
     utils::sort_data(sort_by_lat, &points);
-    // Print point pairs
-    for (i = 0; i < point_pairs.size(); i++)
-    {
-        Point p1 = point_pairs[i].first;
-        Point p2 = point_pairs[i].second;
-        std::cout << p1.lat << " " << p1.lon << " " << p2.lat << " " << p2.lon
-                  << std::endl;
-    }
 
     /*
      *
@@ -248,38 +236,22 @@ void object_data_flow(std::string const &filename)
     DataVec train_x = sort_by_lat ? lats : lons;
 
     // Building hashmap
-    /* LearnedHashMap<int, std::pair<Point, Point>, LinearModel> obj_hashmap =
-     */
-    /*     build_hashmap<int, std::pair<Point, Point>, LinearModel>( */
-    /*         sort_by_lat, train_x, train_y, point_pairs); */
+    LearnedHashMap<int, std::pair<Point, Point>, LinearModel> obj_hashmap =
+        build_hashmap<int, std::pair<Point, Point>, LinearModel>(
+            sort_by_lat, train_x, train_y, point_pairs);
 
-    std::cout << "\n-BUILD HASHMAP" << std::endl;
+    bool full_info = false;
+    obj_hashmap.display_stats(full_info);
+    obj_hashmap.display();
 
-    auto start = std::chrono::high_resolution_clock::now();
+    // Lookup point
+    std::pair<Point, Point> result_region;
+    long double s_lat = 144.914151;
+    long double s_lon = -37.840485;
+    std::cout << "Searching point: " << s_lat << " " << s_lon << std::endl;
 
-    LearnedHashMap<int, std::pair<Point, Point>, LinearModel> hashmap(
-        sort_by_lat, train_x, train_y);
-    for (int i = 0; i < point_pairs.size(); i++)
-        hashmap.insertNode(point_pairs[i]);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-
-    std::cout << "LearnedHashMap insertion time: " << duration.count()
-              << " nanoseconds\nHashmap Stats:";
-
-    bool full_info = true;
-    hashmap.display_stats(full_info);
-
-    /* Point tmp_point; */
-    /* long double s_lat = 144.961866; */
-    /* long double s_lon = -37.795042; */
-    /* std::cout << "Searching point: " << s_lat << " " << s_lon << std::endl;
-     */
-    /* bool found_point = obj_hashmap.approximateSearch(s_lat, s_lon,
-     * tmp_point); */
-    /* std::cout << "Found point " << found_point << std::endl; */
+    bool found_point = obj_hashmap.regionSearch(s_lat, s_lon, result_region);
+    std::cout << "Found point " << found_point << std::endl;
 
     /* for (i = 0; i < objects.size(); i++) */
     /* { */

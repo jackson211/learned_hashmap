@@ -12,6 +12,32 @@
 
 #include <cstddef>
 
+template <typename Type, typename DataType> bool is(const DataType &data)
+{
+    if (&data == NULL)
+        return false;
+    return typeid(data) == typeid(Type);
+}
+
+bool inRange(const std::pair<Point, Point> &range, const Point &p)
+{
+    long double lat = p.lat;
+    long double lon = p.lon;
+
+    long double min_lat = range.first.lat;
+    long double min_lon = range.first.lon;
+    long double max_lat = range.second.lat;
+    long double max_lon = range.second.lon;
+
+    if (min_lat > max_lat)
+        std::swap(min_lat, max_lat);
+    if (min_lon > max_lon)
+        std::swap(min_lon, max_lon);
+    bool result = ((lat - max_lat) * (lat - min_lat) <= 0) &&
+                  ((lon - max_lon) * (lon - min_lon) <= 0);
+    return result;
+}
+
 // Hash node class template
 template <typename KeyType, typename ValueType> class HashNode
 {
@@ -188,37 +214,78 @@ public:
         return false;
     }
 
-    bool approximateSearch(const long double lat, const long double lon,
-                           ValueType &value)
+    bool regionSearch(const long double lat, const long double lon,
+                      std::pair<Point, Point> &value)
     {
-        // if (pointSearch(lat, lon, value) == true)
-        //    return true;
 
-        unsigned long hashKey = hash_function(sort_by_lat ? lat : lon);
+        long double search_value = sort_by_lat ? lat : lon;
+        unsigned long hashKey = hash_function(search_value);
         std::cout << "Hashkey: " << hashKey << std::endl;
 
-        HashNode<KeyType, ValueType> *temp = table[hashKey];
+        Point search_point{lat, lon};
 
-        unsigned long i = hashKey;
+        HashNode<KeyType, ValueType> *temp = table[hashKey];
+        HashNode<KeyType, ValueType> *temp_j = table[hashKey];
+        std::pair<Point, Point> temp_result;
+
+        // Upper bound
+        unsigned long i = hashKey, j = hashKey;
+
+        while (temp != NULL)
+        {
+            temp_result = temp->getValue();
+            if (inRange(temp_result, search_point))
+            {
+                std::cout << "Result: " << temp_result.first.id << " "
+                          << temp_result.first.lat << " "
+                          << temp_result.first.lon << " "
+                          << temp_result.second.id << " "
+                          << temp_result.second.lat << temp_result.second.lon
+                          << std::endl;
+                return true;
+            }
+            temp = temp->getNext();
+        }
+
         while (temp == NULL)
         {
             i++;
+            j--;
+            std::cout << "i: " << i << "j: " << j << std::endl;
             temp = table[i];
-            std::cout << "i: " << i << std::endl;
+            temp_j = table[j];
+            while (temp != NULL)
+            {
+                temp_result = temp->getValue();
+                if (inRange(temp_result, search_point))
+                {
+                    std::cout
+                        << "Result: " << temp_result.first.id << " "
+                        << temp_result.first.lat << " " << temp_result.first.lon
+                        << " " << temp_result.second.id << " "
+                        << temp_result.second.lat << temp_result.second.lon
+                        << std::endl;
+                    return true;
+                }
+                temp = temp->getNext();
+            }
+            while (temp_j != NULL)
+            {
+                temp_result = temp_j->getValue();
+                if (inRange(temp_result, search_point))
+                {
+                    std::cout
+                        << "Result: " << temp_result.first.id << " "
+                        << temp_result.first.lat << " " << temp_result.first.lon
+                        << " " << temp_result.second.id << " "
+                        << temp_result.second.lat << temp_result.second.lon
+                        << std::endl;
+                    return true;
+                }
+                temp_j = temp_j->getNext();
+            }
         }
-        std::cout << temp->getValue().id << " " << temp->getValue().lat << " "
-                  << temp->getValue().lon << std::endl;
 
-        temp = table[hashKey];
-        i = hashKey;
-        while (temp == NULL)
-        {
-            i--;
-            temp = table[i];
-            std::cout << "i: " << i << std::endl;
-        }
-        std::cout << temp->getValue().id << " " << temp->getValue().lat << " "
-                  << temp->getValue().lon << std::endl;
         return true;
     }
 
@@ -390,8 +457,18 @@ public:
                         isFirst = false;
                     }
                     ValueType item = temp->getValue();
-                    std::cout << "(" << item.id << "," << item.lat << ","
-                              << item.lon << ") -> ";
+                    if (typeid(item) == typeid(std::pair<Point, Point>))
+                    {
+                        std::cout << "[(" << item.first.id << ","
+                                  << item.first.lat << "," << item.first.lon
+                                  << item.second.id << "," << item.second.lat
+                                  << "," << item.second.lon << ")] -> ";
+                    }
+                    // else if (typeid(item) == typeid(Point))
+                    // {
+                    //     std::cout << "(" << item.id << "," << item.lat << ","
+                    //               << item.lon << ") -> ";
+                    // }
                     temp = temp->getNext();
                 }
                 std::cout << std::endl;
