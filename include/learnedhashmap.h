@@ -95,6 +95,7 @@ public:
 
         // Initialize table
         Capacity = MAX_INDEX - MIN_INDEX + 1;
+        std::cout << "Capacity: " << Capacity << std::endl;
         table = new HashNode<KeyType, ValueType> *[Capacity];
         size_t i;
         for (i = 0; i < Capacity; i++)
@@ -107,6 +108,7 @@ public:
           MAX_INDEX(MAX_PRED_VALUE)
     {
         Capacity = MAX_INDEX - MIN_INDEX + 1;
+        std::cout << "Capacity: " << Capacity << std::endl;
         table = new HashNode<KeyType, ValueType> *[Capacity];
         for (size_t i = 0; i < Capacity; i++)
             table[i] = NULL;
@@ -228,65 +230,58 @@ public:
         HashNode<KeyType, ValueType> *temp_j = table[hashKey];
         std::pair<Point, Point> temp_result;
 
-        // Upper bound
-        unsigned long i = hashKey, j = hashKey;
-
+        // If table[hashKey] is not empty, search at current position
         while (temp != NULL)
         {
             temp_result = temp->getValue();
             if (inRange(temp_result, search_point))
             {
-                std::cout << "Result: " << temp_result.first.id << " "
-                          << temp_result.first.lat << " "
-                          << temp_result.first.lon << " "
-                          << temp_result.second.id << " "
-                          << temp_result.second.lat << temp_result.second.lon
-                          << std::endl;
+                value = temp_result;
                 return true;
             }
             temp = temp->getNext();
         }
 
+        // Search on both upper and lower bounds
+        int i = hashKey + 1, j = hashKey - 1;
         while (temp == NULL)
         {
-            i++;
-            j--;
-            std::cout << "i: " << i << "j: " << j << std::endl;
-            temp = table[i];
-            temp_j = table[j];
-            while (temp != NULL)
+            if (i < Capacity)
             {
-                temp_result = temp->getValue();
-                if (inRange(temp_result, search_point))
+                std::cout << "i: " << i << " ";
+                temp = table[i];
+                while (temp != NULL)
                 {
-                    std::cout
-                        << "Result: " << temp_result.first.id << " "
-                        << temp_result.first.lat << " " << temp_result.first.lon
-                        << " " << temp_result.second.id << " "
-                        << temp_result.second.lat << temp_result.second.lon
-                        << std::endl;
-                    return true;
+                    temp_result = temp->getValue();
+                    if (inRange(temp_result, search_point))
+                    {
+                        value = temp_result;
+                        return true;
+                    }
+                    temp = temp->getNext();
                 }
-                temp = temp->getNext();
+                i++;
             }
-            while (temp_j != NULL)
+            if (j >= 0)
             {
-                temp_result = temp_j->getValue();
-                if (inRange(temp_result, search_point))
+                std::cout << "j: " << j << std::endl;
+                temp = table[j];
+                while (temp != NULL)
                 {
-                    std::cout
-                        << "Result: " << temp_result.first.id << " "
-                        << temp_result.first.lat << " " << temp_result.first.lon
-                        << " " << temp_result.second.id << " "
-                        << temp_result.second.lat << temp_result.second.lon
-                        << std::endl;
-                    return true;
+                    temp_result = temp->getValue();
+                    if (inRange(temp_result, search_point))
+                    {
+                        value = temp_result;
+                        return true;
+                    }
+                    temp = temp->getNext();
                 }
-                temp_j = temp_j->getNext();
+                j--;
             }
+            if ((i >= Capacity) && (j < 0))
+                break;
         }
-
-        return true;
+        return false;
     }
 
     bool removeNode(const long double lat, const long double lon)

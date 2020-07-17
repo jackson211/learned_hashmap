@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-INPUT_FILE=$1
+OBJ_TYPE=$1
+INPUT_FILE=$2
 
 echo "Run learned hashmap"
-cmake --build build && ./build/main $INPUT_FILE
+cmake --build build && ./build/main $OBJ_TYPE $INPUT_FILE

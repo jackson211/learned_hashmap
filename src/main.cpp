@@ -242,28 +242,28 @@ void object_data_flow(std::string const &filename)
 
     bool full_info = false;
     obj_hashmap.display_stats(full_info);
-    obj_hashmap.display();
 
-    // Lookup point
+    // Lookup region
     std::pair<Point, Point> result_region;
-    long double s_lat = 144.914151;
-    long double s_lon = -37.840485;
+    long double s_lat = 144.859550;
+    long double s_lon = -37.848005;
     std::cout << "Searching point: " << s_lat << " " << s_lon << std::endl;
 
-    bool found_point = obj_hashmap.regionSearch(s_lat, s_lon, result_region);
-    std::cout << "Found point " << found_point << std::endl;
+    bool found_region = obj_hashmap.regionSearch(s_lat, s_lon, result_region);
+    std::cout << "Found region " << found_region << std::endl;
 
-    /* for (i = 0; i < objects.size(); i++) */
-    /* { */
-    /*     if (objects[i].getId() == 14) */
-    /*     { */
-    /*         std::tuple<Point, Point> box = objects[i].getBbox(); */
-    /*         std::cout << "14 parkville: " << std::get<0>(box).lat */
-    /*                   << std::get<0>(box).lon << ", " << std::get<1>(box).lat
-     */
-    /*                   << std::get<1>(box).lon << std::endl; */
-    /*     } */
-    /* } */
+    if (found_region)
+    {
+        std::cout << "Result: " << result_region.first.id << " "
+                  << result_region.first.lat << " " << result_region.first.lon
+                  << " " << result_region.second.id << " "
+                  << result_region.second.lat << result_region.second.lon
+                  << std::endl;
+    }
+    else
+    {
+        std::cout << "Region not found" << std::endl;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -273,15 +273,23 @@ int main(int argc, char *argv[])
      * Reading data from file
      *
      */
-    if (argc < 2)
+    if (argc < 3)
     {
-        std::cerr << "Usage: " << argv[0] << " input file missing" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " [object type] [input file]\n"
+                  << "Object type:\n\tp\tPoint type\n\to\tObject type\n"
+                  << "Input file:\n\ttext file" << std::endl;
         return 1;
     }
-
-    // point_data_flow(argv[1]);
-
-    object_data_flow(argv[1]);
+    if (*argv[1] == 'p')
+    {
+        std::cout << "Object type: Point" << std::endl;
+        point_data_flow(argv[2]);
+    }
+    else if (*argv[1] == 'o')
+    {
+        std::cout << "Object type: Object" << std::endl;
+        object_data_flow(argv[2]);
+    }
 
     return 0;
 }

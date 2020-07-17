@@ -25,7 +25,7 @@ const bool operator==(const Point &lhs, const Point &rhs)
 class Object
 {
 public:
-    Object(std::vector<Point> points)
+    Object(std::vector<Point> points) : coordinates(points)
     {
         long double min_x = points[0].lat;
         long double min_y = points[0].lon;
@@ -64,6 +64,8 @@ public:
         assert(min_x <= max_x && min_y <= max_y);
     }
 
+    std::vector<Point> getCoordinates() const { return coordinates; }
+
     std::pair<Point, Point> getBbox() const { return bbox; }
 
     Point getCentroid() const { return centroid; }
@@ -73,6 +75,7 @@ public:
     void setId(id_type i) { id = i; }
 
 private:
+    std::vector<Point> coordinates;
     std::pair<Point, Point> bbox;
     Point centroid;
     id_type id;
