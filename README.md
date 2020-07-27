@@ -13,11 +13,15 @@ cmake --build build
 
 To run Learned HashMap:
 ```sh
-./run.sh [DATA_FILE]
+./run.sh [OBJECT_TYPE] [DATA_FILE]
 ```
-Example:
+Example point file:
 ```sh
-./run.sh test.txt
+./run.sh p test.txt
+```
+Example object file:
+```sh
+./run.sh o melbourne.txt
 ```
 
 To run RTree:

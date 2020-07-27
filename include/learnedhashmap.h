@@ -3,7 +3,6 @@
 #ifndef HASHMAP_H
 #define HASHMAP_H
 
-// #include "HashNode.h"
 #include "entry.h"
 #include <cstddef>
 #include <iostream>
@@ -17,25 +16,6 @@ template <typename Type, typename DataType> bool is(const DataType &data)
     if (&data == NULL)
         return false;
     return typeid(data) == typeid(Type);
-}
-
-bool inRange(const std::pair<Point, Point> &range, const Point &p)
-{
-    long double lat = p.lat;
-    long double lon = p.lon;
-
-    long double min_lat = range.first.lat;
-    long double min_lon = range.first.lon;
-    long double max_lat = range.second.lat;
-    long double max_lon = range.second.lon;
-
-    if (min_lat > max_lat)
-        std::swap(min_lat, max_lat);
-    if (min_lon > max_lon)
-        std::swap(min_lon, max_lon);
-    bool result = ((lat - max_lat) * (lat - min_lat) <= 0) &&
-                  ((lon - max_lon) * (lon - min_lon) <= 0);
-    return result;
 }
 
 // Hash node class template
@@ -133,7 +113,7 @@ public:
 
     size_t getCapacity() const { return Capacity; }
 
-    int hash_function(long double value)
+    inline int hash_function(long double value)
     {
         return _model.template predict<int>(value) - MIN_INDEX;
     }

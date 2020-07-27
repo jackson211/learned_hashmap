@@ -83,7 +83,7 @@ namespace model
             _intercept += 0.5f; // Round to nearest int - Precalculate
         }
 
-        template <typename V = int> V predict(T x)
+        template <typename V = int> inline V predict(T x)
         {
             return x * _slope + _intercept - (x < 0);
         }

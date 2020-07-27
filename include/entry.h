@@ -88,4 +88,23 @@ std::ostream &operator<<(std::ostream &os, const Object &obj)
        << "max: " << bbox.second.lat << ", " << bbox.second.lon << "]";
     return os;
 }
+
+bool inRange(const std::pair<Point, Point> &range, const Point &p)
+{
+    long double lat = p.lat;
+    long double lon = p.lon;
+
+    long double min_lat = range.first.lat;
+    long double min_lon = range.first.lon;
+    long double max_lat = range.second.lat;
+    long double max_lon = range.second.lon;
+
+    if (min_lat > max_lat)
+        std::swap(min_lat, max_lat);
+    if (min_lon > max_lon)
+        std::swap(min_lon, max_lon);
+    bool result = ((lat - max_lat) * (lat - min_lat) <= 0) &&
+                  ((lon - max_lon) * (lon - min_lon) <= 0);
+    return result;
+}
 #endif

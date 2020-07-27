@@ -52,7 +52,7 @@ build_hashmap(const bool &sort_by_lat, const DataVec &train_x,
     return hashmap;
 }
 
-void point_data_flow(std ::string const &filename)
+void point_data_flow(std::string const &filename)
 {
     std::vector<Point> data;
     bool sort_by_lat = utils::read_data<long double>(filename, &data);
@@ -94,6 +94,9 @@ void point_data_flow(std ::string const &filename)
     LearnedHashMap<int, Point, LinearModel> hashmap =
         build_hashmap<int, Point, LinearModel>(sort_by_lat, train_x, train_y,
                                                data);
+
+    bool full_info = false;
+    hashmap.display_stats(full_info);
 
     /*
      *
@@ -182,6 +185,12 @@ void object_data_flow(std::string const &filename)
     std::vector<Object> objects;
     utils::read_object_data<long double>(filename, &objects);
 
+    /*
+     *
+     * Preprocessing data
+     *
+     *
+     */
     std::set<long double> lat_counter;
     std::set<long double> lon_counter;
     std::vector<Point> points;
@@ -195,6 +204,7 @@ void object_data_flow(std::string const &filename)
         Point p2 = std::get<1>(bbox);
         p1.setId(obj_id);
         p2.setId(obj_id);
+
         points.push_back(p1);
         points.push_back(p2);
         point_pairs.push_back(std::make_pair(p1, p2));
@@ -245,8 +255,8 @@ void object_data_flow(std::string const &filename)
 
     // Lookup region
     std::pair<Point, Point> result_region;
-    long double s_lat = 144.859550;
-    long double s_lon = -37.848005;
+    long double s_lat = 144.956150;
+    long double s_lon = -37.798837;
     std::cout << "Searching point: " << s_lat << " " << s_lon << std::endl;
 
     bool found_region = obj_hashmap.regionSearch(s_lat, s_lon, result_region);
@@ -289,6 +299,13 @@ int main(int argc, char *argv[])
     {
         std::cout << "Object type: Object" << std::endl;
         object_data_flow(argv[2]);
+    }
+    else
+    {
+        std::cerr << "Usage: " << argv[0] << " [object type] [input file]\n"
+                  << "Object type:\n\tp\tPoint type\n\to\tObject type\n"
+                  << "Input file:\n\ttext file" << std::endl;
+        return 1;
     }
 
     return 0;
