@@ -255,8 +255,8 @@ void object_data_flow(std::string const &filename)
 
     // Lookup region
     std::pair<Point, Point> result_region;
-    long double s_lat = 144.956150;
-    long double s_lon = -37.798837;
+    long double s_lat = 144.971628;
+    long double s_lon = -37.803018;
     std::cout << "Searching point: " << s_lat << " " << s_lon << std::endl;
 
     bool found_region = obj_hashmap.regionSearch(s_lat, s_lon, result_region);
@@ -264,7 +264,7 @@ void object_data_flow(std::string const &filename)
 
     if (found_region)
     {
-        std::cout << "Result: " << result_region.first.id << " "
+        std::cout << "Result:\nID:" << result_region.first.id << " "
                   << result_region.first.lat << " " << result_region.first.lon
                   << " " << result_region.second.id << " "
                   << result_region.second.lat << result_region.second.lon
