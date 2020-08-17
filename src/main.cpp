@@ -8,13 +8,12 @@
 
 #include "../include/entry.h"
 #include "../include/learnedhashmap.h"
+#include "../include/learnedhashmap_a.h"
 #include "../include/linear.h"
-#include "../include/piecewise.h"
 #include "../include/utils.h"
 
 typedef std::vector<long double> DataVec;
 typedef model::Linear<long double> LinearModel;
-typedef model::Piecewise<long double> PiecewiseModel;
 
 template <typename KeyType, typename ValueType, typename ModelType>
 LearnedHashMap<KeyType, ValueType, ModelType>
@@ -50,6 +49,64 @@ build_hashmap(const bool &sort_by_lat, const DataVec &train_x,
               << " nanoseconds\nHashmap Stats:";
 
     return hashmap;
+}
+
+template <typename MapType>
+void test_performance(std::vector<Point> &data,
+                      std::vector<long double> &test_set, MapType &hashmap)
+{
+
+    /*
+     *
+     * Test look up performance
+     *
+     */
+    // First look up loop for recording performance
+    int i;
+    Point tmp_result;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    for (i = 0; i < test_set.size(); i += 2)
+        hashmap.pointSearch(test_set[i], test_set[i + 1], tmp_result);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+    // Second look up loop for testing accuracy
+    int found = 0;
+    std::vector<Point> lookup_results;
+    for (i = 0; i < test_set.size(); i += 2)
+    {
+        bool tmp_found =
+            hashmap.pointSearch(test_set[i], test_set[i + 1], tmp_result);
+        if (tmp_found)
+        {
+            found++;
+            lookup_results.push_back(tmp_result);
+        }
+    }
+
+    int true_positives = 0;
+    for (i = 0; i < lookup_results.size(); i++)
+    {
+        if (lookup_results[i] == data[i])
+            true_positives++;
+    }
+
+    /*
+     *
+     * Print stats
+     *
+     */
+    std::cout << "\n-RESULTS\n look up results:\n  Found: " << found
+              << "\n  True Positives: " << true_positives << "\n  Precision: "
+              << true_positives / (double)data.size() * 100.0 << "% "
+              << "\n  Recall: " << true_positives / (double)found * 100.0
+              << "% "
+              << "\n  Look up time: " << duration.count() << " nanoseconds"
+              << "\n  Average look up time: " << duration.count() / data.size()
+              << " nanoseconds" << std::endl;
 }
 
 void point_data_flow(std::string const &filename)
@@ -98,57 +155,8 @@ void point_data_flow(std::string const &filename)
     bool full_info = false;
     hashmap.display_stats(full_info);
 
-    /*
-     *
-     * Test look up performance
-     *
-     */
-    // First look up loop for recording performance
-    Point tmp_result;
-    auto start = std::chrono::high_resolution_clock::now();
-
-    for (i = 0; i < test_set.size(); i += 2)
-        hashmap.pointSearch(test_set[i], test_set[i + 1], tmp_result);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-
-    // Second look up loop for testing accuracy
-    int found = 0;
-    std::vector<Point> lookup_results;
-    for (i = 0; i < test_set.size(); i += 2)
-    {
-        bool tmp_found =
-            hashmap.pointSearch(test_set[i], test_set[i + 1], tmp_result);
-        if (tmp_found)
-        {
-            found++;
-            lookup_results.push_back(tmp_result);
-        }
-    }
-
-    int true_positives = 0;
-    for (i = 0; i < lookup_results.size(); i++)
-    {
-        if (lookup_results[i] == data[i])
-            true_positives++;
-    }
-
-    /*
-     *
-     * Print stats
-     *
-     */
-    std::cout << "\n-RESULTS\nLearnedHashMap look up results:\n  Found: "
-              << found << "\n  True Positives: " << true_positives
-              << "\n  Precision: "
-              << true_positives / (double)data.size() * 100.0 << "% "
-              << "\n  Recall: " << true_positives / (double)found * 100.0
-              << "% "
-              << "\n  Look up time: " << duration.count() << " nanoseconds"
-              << "\n  Average look up time: " << duration.count() / data.size()
-              << " nanoseconds" << std::endl;
+    test_performance<LearnedHashMap<int, Point, LinearModel>>(data, test_set,
+                                                              hashmap);
 
     /*
      *
@@ -178,6 +186,21 @@ void point_data_flow(std::string const &filename)
     {
         std::cout << " No results found" << std::endl;
     }
+
+    // another hashmap
+    // LearnedHashMap_A<int, Point, LinearModel> hashmap_a(sort_by_lat, train_x,
+    //                                                     train_y);
+
+    // std::cout << "Total: " << hashmap_a.size() << std::endl;
+    // for (int i = 0; i < data.size(); i++)
+    // {
+    //     hashmap_a.insertNode(data[i]);
+    // }
+    // std::cout << "Hashmap size: " << hashmap_a.size() << std::endl;
+
+    // test_performance<LearnedHashMap_A<int, Point, LinearModel>>(data,
+    // test_set,
+    //                                                             hashmap_a);
 }
 
 void object_data_flow(std::string const &filename)

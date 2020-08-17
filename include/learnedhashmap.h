@@ -273,7 +273,6 @@ bool LearnedHashMap<KeyType, ValueType, ModelType>::regionSearch(
     Point search_point{lat, lon};
 
     HashNode<KeyType, ValueType> *temp = table[hashKey];
-    HashNode<KeyType, ValueType> *temp_j = table[hashKey];
     std::pair<Point, Point> temp_result;
 
     // If table[hashKey] is not empty, search at current position
