@@ -17,18 +17,15 @@ def convert_fn(row):
     return int(pm.interleave_latlng(row[0], row[1]), 4)
 
 
-file = "../data/NE.txt"
-x = np.loadtxt(file, delimiter=" ")
+path = "../data/"
+filename = "australia-oceania"
+x = np.loadtxt(path + filename + ".txt", delimiter=" ")
 
 x = np.apply_along_axis(convert_fn, 1, x).astype(np.uint64)
 x = np.sort(x, axis=None)
 print(x)
 
-file_to_save = "../data/NE"
-with open(file_to_save, "wb") as f:
+out = path + filename + "_uint64"
+with open(out, "wb") as f:
     f.write(struct.pack("Q", len(x)))
     x.tofile(f)
-
-# path = "/Users/jackson/Documents/code/SOSD/data/books_200M_uint64"
-# d = np.fromfile(path, dtype=np.uint64)[1:]
-# print(d)

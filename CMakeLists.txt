@@ -20,6 +20,3 @@ add_executable(main
 target_include_directories(main PUBLIC
     INCLUDE
 )
-target_include_directories(convert PUBLIC
-    INCLUDE
-)
