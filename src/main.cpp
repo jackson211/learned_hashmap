@@ -186,21 +186,6 @@ void point_data_flow(std::string const &filename)
     {
         std::cout << " No results found" << std::endl;
     }
-
-    // another hashmap
-    // LearnedHashMap_A<int, Point, LinearModel> hashmap_a(sort_by_lat, train_x,
-    //                                                     train_y);
-
-    // std::cout << "Total: " << hashmap_a.size() << std::endl;
-    // for (int i = 0; i < data.size(); i++)
-    // {
-    //     hashmap_a.insertNode(data[i]);
-    // }
-    // std::cout << "Hashmap size: " << hashmap_a.size() << std::endl;
-
-    // test_performance<LearnedHashMap_A<int, Point, LinearModel>>(data,
-    // test_set,
-    //                                                             hashmap_a);
 }
 
 void object_data_flow(std::string const &filename)

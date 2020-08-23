@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <set>
 #include <sstream>
 #include <string>
@@ -61,6 +62,21 @@ namespace utils
                                 });
     }
 
+    long double getVariance(std::vector<long double> &data)
+    {
+
+        long double sum = std::accumulate(data.begin(), data.end(), 0.0);
+        long double mean = sum / data.size();
+        std::vector<long double> diff(data.size());
+        std::transform(data.begin(), data.end(), diff.begin(),
+                       [mean](long double x) { return x - mean; });
+
+        long double sq_sum =
+            std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+        long double variance = sq_sum / data.size();
+        return variance;
+    }
+
     template <typename T>
     bool read_object_data(std ::string const &filename,
                           std::vector<Object> *data)
@@ -97,6 +113,41 @@ namespace utils
         return true;
     }
 
+    // template <typename T>
+    // bool read_data(std ::string const &filename, std::vector<Point> *data)
+    // {
+    //     is_valid_file(filename);
+    //     std::cout << "Reading from " << filename << std::endl;
+    //     std::fstream in(filename);
+    //     std::string line;
+    //     T lat, lon;
+    //     std::vector<T> lats, lons;
+
+    //     while (std::getline(in, line))
+    //     {
+    //         std::stringstream ss(line);
+    //         if (!(ss >> lat >> lon))
+    //             break;
+    //         data->push_back(Point{lat, lon});
+    //         lats.push_back(lat);
+    //         lons.push_back(lon);
+    //     }
+
+    //     long double lat_var = getVariance(lats);
+    //     long double lon_var = getVariance(lons);
+    //     std::cout << "lat_var: " << lat_var << " lon_var" << lon_var
+    //               << std::endl;
+
+    //     // Check if # unique value of latitude is larger than # unique value
+    //     of
+    //     // lontitude
+    //     bool sort_by_lat = (lat_var <= lon_var) ? true : false;
+    //     sort_data(sort_by_lat, data);
+    //     remove_repeated(data);
+    //     reset_id(data);
+
+    //     return sort_by_lat;
+    // }
     template <typename T>
     bool read_data(std ::string const &filename, std::vector<Point> *data)
     {
@@ -129,12 +180,6 @@ namespace utils
         return sort_by_lat;
     }
 
-    void preprocess(std::vector<Point> *data, bool sort_by_lat = true)
-    {
-        sort_data(sort_by_lat, data);
-        remove_repeated(data);
-        reset_id(data);
-    }
 }; // namespace utils
 
 #endif
