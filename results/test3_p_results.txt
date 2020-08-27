@@ -1,0 +1,27 @@
+Object type: Point
+Reading from data/test3.txt
+
+-READ DATA
+Data Stats:
+  Sort by lat
+  Size: 1000
+
+-BUILD HASHMAP
+  -TRAIN MODEL
+    Training on Linear model
+    Slope: 11.9853, Intercept: 576.669
+    Prediction:{ Max: 1646, Min: -1521, Max-Min: 3168 }
+LearnedHashMap insertion time: 713000 nanoseconds
+Hashmap Stats:
+  Total entries: 1000
+  Total slots: 327
+  Average entries per slots: 3.0581
+
+-RESULTS
+ look up results:
+  Found: 1000
+  True Positives: 1000
+  Precision: 100% 
+  Recall: 100% 
+  Look up time: 80000 nanoseconds
+  Average look up time: 80 nanoseconds

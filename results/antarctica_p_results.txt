@@ -1,0 +1,27 @@
+Object type: Point
+Reading from data/antarctica.txt
+
+-READ DATA
+Data Stats:
+  Sort by lat
+  Size: 4797653
+
+-BUILD HASHMAP
+  -TRAIN MODEL
+    Training on Linear model
+    Slope: 12158, Intercept: 2.40651e+06
+    Prediction:{ Max: 4594943, Min: 218078, Max-Min: 4376866 }
+LearnedHashMap insertion time: 1257625000 nanoseconds
+Hashmap Stats:
+  Total entries: 4797653
+  Total slots: 1306933
+  Average entries per slots: 3.67092
+
+-RESULTS
+ look up results:
+  Found: 4797653
+  True Positives: 4797653
+  Precision: 100% 
+  Recall: 100% 
+  Look up time: 453175000 nanoseconds
+  Average look up time: 94 nanoseconds

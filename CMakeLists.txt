@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(LearnedHashMap)
-
+set(CMAKE_C_COMPILER "gcc-10")
+set(CMAKE_CXX_COMPILER "g++-10")
 set(CMAKE_CXX_STANDARD 17)
+
+project(LearnedHashMap)
 
 
 # find_package(OpenMP REQUIRED)

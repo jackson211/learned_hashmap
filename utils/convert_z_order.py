@@ -28,7 +28,7 @@ if __name__ == '__main__':
     x = np.loadtxt(filepath, delimiter=" ")
     x = np.apply_along_axis(convert_fn, 1, x).astype(np.uint64)
     x = np.sort(x, axis=None)
-    print(x)
+    print(x.size)
 
     out = os.path.join(dirname, filename + "_uint64")
     print("Writing file: " + out)

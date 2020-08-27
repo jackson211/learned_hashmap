@@ -1,0 +1,27 @@
+Object type: Point
+Reading from data/NE.txt
+
+-READ DATA
+Data Stats:
+  Sort by lon
+  Size: 120150
+
+-BUILD HASHMAP
+  -TRAIN MODEL
+    Training on Linear model
+    Slope: 181269, Intercept: -22335.6
+    Prediction:{ Max: 149090, Min: -12492, Max-Min: 161583 }
+LearnedHashMap insertion time: 29518000 nanoseconds
+Hashmap Stats:
+  Total entries: 120150
+  Total slots: 76757
+  Average entries per slots: 1.56533
+
+-RESULTS
+ look up results:
+  Found: 120150
+  True Positives: 120150
+  Precision: 100%
+  Recall: 100%
+  Look up time: 6333000 nanoseconds
+  Average look up time: 52 nanoseconds

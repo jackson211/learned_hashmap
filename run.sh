@@ -11,7 +11,7 @@ OUT=${NAME}_${OBJ_TYPE}_results.txt
 
 mkdir -p results
 
-echo "Run learned hashmap"
+echo "Run learned hashmap on ${FILE_NAME}"
 cmake --build build
 build/main $OBJ_TYPE $INPUT_FILE > results/${OUT}
 

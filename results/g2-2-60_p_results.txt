@@ -1,0 +1,27 @@
+Object type: Point
+Reading from data/g2-2-60.txt
+
+-READ DATA
+Data Stats:
+  Sort by lat
+  Size: 2041
+
+-BUILD HASHMAP
+  -TRAIN MODEL
+    Training on Linear model
+    Slope: 7.41983, Intercept: -3056.33
+    Prediction:{ Max: 2501, Min: -719, Max-Min: 3221 }
+LearnedHashMap insertion time: 861000 nanoseconds
+Hashmap Stats:
+  Total entries: 2041
+  Total slots: 366
+  Average entries per slots: 5.5765
+
+-RESULTS
+ look up results:
+  Found: 2041
+  True Positives: 2041
+  Precision: 100% 
+  Recall: 100% 
+  Look up time: 147000 nanoseconds
+  Average look up time: 72 nanoseconds

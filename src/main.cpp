@@ -163,29 +163,30 @@ void point_data_flow(std::string const &filename)
      * Range query
      *
      */
-    std::cout << "\n-RANGE QUERY";
+    // std::cout << "\n-RANGE QUERY";
 
-    long double min[2] = {0.395, 0.398};
-    long double max[2] = {0.4, 0.41};
-    std::cout << "\n  Search range: {min_point: (" << min[0] << "," << min[1]
-              << "), max_point: (" << max[0] << "," << max[1] << ")}";
+    // long double min[2] = {0.395, 0.398};
+    // long double max[2] = {0.4, 0.41};
+    // std::cout << "\n  Search range: {min_point: (" << min[0] << "," << min[1]
+    //           << "), max_point: (" << max[0] << "," << max[1] << ")}";
 
-    std::vector<Point> result;
-    bool found_result = hashmap.rangeSearch(min, max, &result);
+    // std::vector<Point> result;
+    // bool found_result = hashmap.rangeSearch(min, max, &result);
 
-    if (found_result)
-    {
-        std::cout << "  Search result: " << result.size() << std::endl;
-        for (size_t i = 0; i < result.size(); i++)
-        {
-            std::cout << "    " << result[i].id << " " << result[i].lat << " "
-                      << result[i].lon << std::endl;
-        }
-    }
-    else
-    {
-        std::cout << " No results found" << std::endl;
-    }
+    // if (found_result)
+    // {
+    //     std::cout << "  Search result: " << result.size() << std::endl;
+    //     for (size_t i = 0; i < result.size(); i++)
+    //     {
+    //         std::cout << "    " << result[i].id << " " << result[i].lat << "
+    //         "
+    //                   << result[i].lon << std::endl;
+    //     }
+    // }
+    // else
+    // {
+    //     std::cout << " No results found" << std::endl;
+    // }
 }
 
 void object_data_flow(std::string const &filename)

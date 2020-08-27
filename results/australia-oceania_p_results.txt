@@ -1,0 +1,27 @@
+Object type: Point
+Reading from data/australia-oceania.txt
+
+-READ DATA
+Data Stats:
+  Sort by lat
+  Size: 114505248
+
+-BUILD HASHMAP
+  -TRAIN MODEL
+    Training on Linear model
+    Slope: 331701, Intercept: 1.04909e+07
+    Prediction:{ Max: 70197004, Min: -49215198, Max-Min: 119412203 }
+LearnedHashMap insertion time: 54818903000 nanoseconds
+Hashmap Stats:
+  Total entries: 114505248
+  Total slots: 18242678
+  Average entries per slots: 6.27678
+
+-RESULTS
+ look up results:
+  Found: 114505248
+  True Positives: 114505248
+  Precision: 100% 
+  Recall: 100% 
+  Look up time: 46210702000 nanoseconds
+  Average look up time: 403 nanoseconds
