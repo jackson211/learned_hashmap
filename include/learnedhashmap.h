@@ -445,42 +445,43 @@ template <typename KeyType, typename ValueType, typename ModelType>
 void LearnedHashMap<KeyType, ValueType, ModelType>::display_stats(
     bool showFullStats) const
 {
-    std::unordered_map<unsigned long, int> mp;
+    // std::unordered_map<unsigned long, int> mp;
 
-    for (int i = 0; i < numSlots; ++i)
-    {
-        HashNode<KeyType, ValueType> *entry = table[i];
-        if (entry == NULL)
-        {
-            mp[i] = 0;
-        }
-        while (entry != NULL)
-        {
-            mp[i]++;
-            entry = entry->getNext();
-        }
-    }
-    int total = 0;
-    int count = 0;
+    // for (int i = 0; i < numSlots; ++i)
+    // {
+    //     HashNode<KeyType, ValueType> *entry = table[i];
+    //     if (entry == NULL)
+    //     {
+    //         mp[i] = 0;
+    //     }
+    //     while (entry != NULL)
+    //     {
+    //         mp[i]++;
+    //         entry = entry->getNext();
+    //     }
+    // }
+    // int total = 0;
+    // int count = 0;
 
-    if (showFullStats)
-        std::cout << "{ ";
-    for (auto x : mp)
-    {
-        if (x.second != 0)
-        {
-            if (showFullStats)
-            {
-                std::cout << x.first << ": " << x.second << std::endl;
-            }
-            total += x.second;
-            count++;
-        }
-    }
-    if (showFullStats)
-        std::cout << " }" << std::endl;
-    std::cout << "\n  Total entries: " << total << "\n  Total slots: " << count
-              << "\n  Average entries per slots: " << total / (double)count
+    // if (showFullStats)
+    //     std::cout << "{ ";
+    // for (auto x : mp)
+    // {
+    //     if (x.second != 0)
+    //     {
+    //         if (showFullStats)
+    //         {
+    //             std::cout << x.first << ": " << x.second << std::endl;
+    //         }
+    //         total += x.second;
+    //         count++;
+    //     }
+    // }
+    // if (showFullStats)
+    //     std::cout << " }" << std::endl;
+    std::cout << "\n  Total entries: " << numEntries
+              << "\n  Total slots: " << numSlots
+              << "\n  Loading factor: " << numEntries / (double)numSlots
               << std::endl;
 }
 
