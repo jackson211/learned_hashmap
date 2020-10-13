@@ -101,12 +101,20 @@ int main(int argc, char *argv[])
     int i, nhits;
     printf("number of rects = %d\n", nrects);
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     for (i = 0; i < nrects; i++)
     {
         tree.Insert(
             rects[i].min, rects[i].max,
             i); // Note, all values including zero are fine in this version
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    std::cout << "Build time: " << duration.count() << " nanoseconds\n"
+              << std::endl;
 
     // Iterator test
     // int itIndex = 0;
@@ -124,14 +132,14 @@ int main(int argc, char *argv[])
 
     std::vector<Rect> search_rects = rects;
 
-    auto start = std::chrono::high_resolution_clock::now();
+    start = std::chrono::high_resolution_clock::now();
     for (i = 0; i < search_rects.size(); i++)
         nhits = tree.Search(search_rects[i].min, search_rects[i].max,
                             MySearchCallback, NULL);
     // printf("Search resulted in %d hits\n", nhits);
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration =
+    end = std::chrono::high_resolution_clock::now();
+    duration =
         std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     std::cout << "Searching time: " << duration.count() << " nanoseconds\n"
               << "Average look up time: "
