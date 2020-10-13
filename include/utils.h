@@ -148,6 +148,7 @@ namespace utils
 
     //     return sort_by_lat;
     // }
+
     template <typename T>
     bool read_data(std ::string const &filename, std::vector<Point> *data)
     {

@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <chrono>
 #include <iostream>
+#include <random>
 #include <set>
 #include <string>
 #include <sys/stat.h>
@@ -11,6 +12,10 @@
 #include "../include/learnedhashmap_a.h"
 #include "../include/linear.h"
 #include "../include/utils.h"
+#include "sys/sysinfo.h"
+#include "sys/types.h"
+
+struct sysinfo memInfo;
 
 typedef std::vector<long double> DataVec;
 typedef model::Linear<long double> LinearModel;
@@ -109,6 +114,20 @@ void test_performance(std::vector<Point> &data,
               << " nanoseconds" << std::endl;
 }
 
+template <typename MapType>
+void test_nearest_neighbor(const Point &p, MapType &hashmap)
+{
+    std::cout << "\n-NEAREST NEIGHBOR QUERY"
+              << "\n  Random Points: "
+              << "rank " << p.id << " coordinates: " << p.lat << ", " << p.lon
+              << std::endl;
+    Point result;
+    distance_function df = euclidean;
+    hashmap.nearestNeighborSearch(p, result, euclidean);
+    std::cout << "  Found nearest neighbor: " << result.id << ": " << result.lat
+              << result.lon << std::endl;
+}
+
 void point_data_flow(std::string const &filename)
 {
     std::vector<Point> data;
@@ -154,6 +173,7 @@ void point_data_flow(std::string const &filename)
 
     bool full_info = false;
     hashmap.display_stats(full_info);
+    // hashmap.display();
 
     test_performance<LearnedHashMap<int, Point, LinearModel>>(data, test_set,
                                                               hashmap);
@@ -187,6 +207,26 @@ void point_data_flow(std::string const &filename)
     // {
     //     std::cout << " No results found" << std::endl;
     // }
+
+    // Nearest neighbour search
+
+    // select random Points from the dataset
+    std::vector<Point> out;
+    size_t n_values = 10;
+    std::sample(data.begin(), data.end(), std::back_inserter(out), n_values,
+                std::mt19937{std::random_device{}()});
+
+    Point p = out[0];
+    test_nearest_neighbor<LearnedHashMap<int, Point, LinearModel>>(p, hashmap);
+
+    sysinfo(&memInfo);
+    long long totalVirtualMem = memInfo.totalram;
+    // Add other values in next statement to avoid int overflow on right hand
+    // side...
+    totalVirtualMem += memInfo.totalswap;
+    totalVirtualMem *= memInfo.mem_unit;
+
+    std::cout << totalVirtualMem << std::endl;
 }
 
 void object_data_flow(std::string const &filename)

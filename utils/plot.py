@@ -1,6 +1,15 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+
+matplotlib.use("pgf")
+matplotlib.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    'font.family': 'serif',
+    'text.usetex': True,
+    'pgf.rcfonts': False,
+})
 
 
 def plot(filename):
@@ -16,10 +25,16 @@ def plot(filename):
     line = [slope * i + intercept for i in x]
     # print([int(i + 0.5) for i in line])
 
+    f = plt.figure()
     plt.scatter(x, y, s=5)
     plt.plot(x, line, 'b')
 
+    plt.title('Sample Linear Regression CDF mapping on data', fontsize=11)
+    plt.xlabel('$x$', fontsize=11)
+    plt.ylabel('$y$', fontsize=11)
     plt.show()
+
+    f.savefig("test.pgf", bbox_inches='tight')
 
 
 if __name__ == '__main__':

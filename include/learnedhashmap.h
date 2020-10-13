@@ -6,6 +6,7 @@
 #include "entry.h"
 #include <cstddef>
 #include <iostream>
+#include <limits>
 #include <unordered_map>
 #include <vector>
 
@@ -55,13 +56,17 @@ public:
     inline int hashFunc(long double value);
     void insertNode(const Point &entry);
     void insertNode(const std::pair<Point, Point> &entry);
-    bool pointSearch(const long double lat, const long double lon,
-                     ValueType &value);
-    bool regionSearch(const long double lat, const long double lon,
-                      std::pair<Point, Point> &value);
     bool removeNode(const long double lat, const long double lon);
+
+    // Search algorithms
+    bool pointSearch(const long double lat, const long double lon,
+                     ValueType &result);
     bool rangeSearch(long double *min, long double *max,
                      std::vector<ValueType> *result);
+    void nearestNeighborSearch(const Point &p, ValueType &result,
+                               distance_function df);
+    bool regionSearch(const long double lat, const long double lon,
+                      std::pair<Point, Point> &value);
     void resize(int newSize);
     void display_stats(bool showFullStats) const;
     void display() const;
@@ -70,6 +75,7 @@ private:
     HashNode<KeyType, ValueType> **table;
     int numSlots;
     int numEntries;
+    int numHeadNode;
     ModelType _model;
     bool sort_by_lat;
     int MIN_INDEX;
@@ -84,6 +90,7 @@ private:
             table[i] = NULL;
         numSlots = tableSize;
         numEntries = 0;
+        numHeadNode = 0;
     }
 
     void deleteTable(HashNode<KeyType, ValueType> **table)
@@ -178,12 +185,27 @@ int LearnedHashMap<KeyType, ValueType, ModelType>::hashFunc(long double value)
 }
 
 template <typename KeyType, typename ValueType, typename ModelType>
+void LearnedHashMap<KeyType, ValueType, ModelType>::resize(int newSize)
+{
+    HashNode<KeyType, ValueType> **newTable =
+        new HashNode<KeyType, ValueType> *[newSize];
+    memcpy(newTable, table, numSlots * sizeof(int));
+
+    numSlots = newSize;
+    delete[] table;
+    table = newTable;
+}
+template <typename KeyType, typename ValueType, typename ModelType>
 void LearnedHashMap<KeyType, ValueType, ModelType>::insertNode(
     const Point &entry)
 {
     unsigned long hashKey = hashFunc(sort_by_lat ? entry.lat : entry.lon);
     HashNode<KeyType, Point> *prev = NULL;
     HashNode<KeyType, Point> *temp = table[hashKey];
+    bool isHead = false;
+
+    if (temp != NULL)
+        isHead = true;
 
     while (temp != NULL)
     {
@@ -204,6 +226,9 @@ void LearnedHashMap<KeyType, ValueType, ModelType>::insertNode(
     else
         // just update the value
         temp->setValue(entry);
+
+    if (isHead)
+        numHeadNode++;
 }
 
 template <typename KeyType, typename ValueType, typename ModelType>
@@ -237,8 +262,48 @@ void LearnedHashMap<KeyType, ValueType, ModelType>::insertNode(
 }
 
 template <typename KeyType, typename ValueType, typename ModelType>
+bool LearnedHashMap<KeyType, ValueType, ModelType>::removeNode(
+    const long double lat, const long double lon)
+{
+    unsigned long hashKey = hashFunc(sort_by_lat ? lat : lon);
+    HashNode<KeyType, ValueType> *prev = NULL;
+    HashNode<KeyType, ValueType> *temp = table[hashKey];
+
+    while (temp != NULL)
+    {
+        if (temp->getValue().lon == lon)
+        {
+            if (temp->getValue().lat == lat)
+            {
+                if (temp->getNext() == NULL)
+                {
+                    if (prev == NULL)
+                        table[hashKey] = NULL;
+                    else
+                        prev->setNext(NULL);
+                }
+                else
+                {
+                    HashNode<KeyType, ValueType> *next_value = temp->getNext();
+                    if (prev == NULL)
+                        table[hashKey] = next_value;
+                    else
+                        prev->setNext(next_value);
+                }
+                numEntries--;
+                delete temp;
+                return true;
+            }
+        }
+        prev = temp;
+        temp = temp->getNext();
+    }
+    return false;
+}
+
+template <typename KeyType, typename ValueType, typename ModelType>
 bool LearnedHashMap<KeyType, ValueType, ModelType>::pointSearch(
-    const long double lat, const long double lon, ValueType &value)
+    const long double lat, const long double lon, ValueType &result)
 {
     unsigned long hashKey = hashFunc(sort_by_lat ? lat : lon);
     if (hashKey > numSlots)
@@ -251,13 +316,108 @@ bool LearnedHashMap<KeyType, ValueType, ModelType>::pointSearch(
         {
             if (temp->getValue().lat == lat)
             {
-                value = temp->getValue();
+                result = temp->getValue();
                 return true;
             }
         }
         temp = temp->getNext();
     }
     return false;
+}
+
+template <typename KeyType, typename ValueType, typename ModelType>
+bool LearnedHashMap<KeyType, ValueType, ModelType>::rangeSearch(
+    long double *min, long double *max, std::vector<ValueType> *result)
+{
+    assert(min[0] <= max[0]);
+    assert(min[1] <= max[1]);
+
+    long double min_x, min_y, max_y, max_x;
+
+    // Rearrange x and y range if the data is sort by latitude
+    if (sort_by_lat)
+    {
+        min_x = min[0]; // lat
+        max_x = max[0];
+        min_y = min[1]; // lon
+        max_y = max[1];
+    }
+    else
+    {
+        min_x = min[1]; // lon
+        max_x = max[1];
+        min_y = min[0]; // lat
+        max_y = max[0];
+    }
+    long double x_range = max_x - min_x;
+    long double y_range = max_y - min_y;
+    int min_hashKey = hashFunc(min_x);
+    int max_hashKey = hashFunc(max_x);
+
+    if (min_hashKey > numSlots)
+        return false;
+    if (min_hashKey < 0)
+        min_hashKey = 0;
+    if (max_hashKey > numSlots)
+        max_hashKey = numSlots - 1;
+    if (min_hashKey > max_hashKey)
+        std::swap(min_hashKey, max_hashKey);
+
+    std::cout << "\n  x_range: " << x_range << " y_range: " << y_range
+              << " min_HashKey: " << min_hashKey
+              << " max_HashKey: " << max_hashKey << std::endl;
+
+    for (int i = min_hashKey; i < max_hashKey + 1; i++)
+    {
+        HashNode<KeyType, ValueType> *temp = table[i];
+        while (temp != NULL)
+        {
+            ValueType candidate = temp->getValue();
+            if (((candidate.lon - max_y) * (candidate.lon - min_y) <= 0) &&
+                ((candidate.lat - max_x) * (candidate.lat - min_x) <= 0))
+                result->push_back(candidate);
+            temp = temp->getNext();
+        }
+    }
+
+    if (result->empty())
+        return false;
+    return true;
+}
+
+template <typename KeyType, typename ValueType, typename ModelType>
+void LearnedHashMap<KeyType, ValueType, ModelType>::nearestNeighborSearch(
+    const Point &p, ValueType &result, distance_function df)
+{
+    unsigned long hashKey = hashFunc(sort_by_lat ? p.lat : p.lon);
+    if (hashKey > numSlots)
+        return;
+
+    long double (*calculate_distance)(const Point &, const Point &);
+    switch (df)
+    {
+    case manhattan:
+        calculate_distance = &manhattan_distance;
+    case euclidean:
+        calculate_distance = &euclidean_distance;
+    }
+
+    HashNode<KeyType, ValueType> *temp = table[hashKey];
+    long double nearest = std::numeric_limits<float>::infinity();
+    while (temp != NULL)
+    {
+        ValueType temp_p = temp->getValue();
+        if (p.lat != temp_p.lat && p.lon != temp_p.lon)
+        {
+            long double p_distance = calculate_distance(temp_p, p);
+            if (p_distance < nearest)
+            {
+                nearest = p_distance;
+                result = temp_p;
+            }
+        }
+        temp = temp->getNext();
+    }
 }
 
 template <typename KeyType, typename ValueType, typename ModelType>
@@ -330,118 +490,6 @@ bool LearnedHashMap<KeyType, ValueType, ModelType>::regionSearch(
 }
 
 template <typename KeyType, typename ValueType, typename ModelType>
-bool LearnedHashMap<KeyType, ValueType, ModelType>::removeNode(
-    const long double lat, const long double lon)
-{
-    unsigned long hashKey = hashFunc(sort_by_lat ? lat : lon);
-    HashNode<KeyType, ValueType> *prev = NULL;
-    HashNode<KeyType, ValueType> *temp = table[hashKey];
-
-    while (temp != NULL)
-    {
-        if (temp->getValue().lon == lon)
-        {
-            if (temp->getValue().lat == lat)
-            {
-                if (temp->getNext() == NULL)
-                {
-                    if (prev == NULL)
-                        table[hashKey] = NULL;
-                    else
-                        prev->setNext(NULL);
-                }
-                else
-                {
-                    HashNode<KeyType, ValueType> *next_value = temp->getNext();
-                    if (prev == NULL)
-                        table[hashKey] = next_value;
-                    else
-                        prev->setNext(next_value);
-                }
-                numEntries--;
-                delete temp;
-                return true;
-            }
-        }
-        prev = temp;
-        temp = temp->getNext();
-    }
-    return false;
-}
-
-template <typename KeyType, typename ValueType, typename ModelType>
-bool LearnedHashMap<KeyType, ValueType, ModelType>::rangeSearch(
-    long double *min, long double *max, std::vector<ValueType> *result)
-{
-    assert(min[0] <= max[0]);
-    assert(min[1] <= max[1]);
-
-    long double min_x, min_y, max_y, max_x;
-
-    // Rearrange x and y range if the data is sort by latitude
-    if (sort_by_lat)
-    {
-        min_x = min[0]; // lat
-        max_x = max[0];
-        min_y = min[1]; // lon
-        max_y = max[1];
-    }
-    else
-    {
-        min_x = min[1]; // lon
-        max_x = max[1];
-        min_y = min[0]; // lat
-        max_y = max[0];
-    }
-    long double x_range = max_x - min_x;
-    long double y_range = max_y - min_y;
-    int min_hashKey = hashFunc(min_x);
-    int max_hashKey = hashFunc(max_x);
-
-    if (min_hashKey > numSlots)
-        return false;
-    if (min_hashKey < 0)
-        min_hashKey = 0;
-    if (max_hashKey > numSlots)
-        max_hashKey = numSlots - 1;
-    if (min_hashKey > max_hashKey)
-        std::swap(min_hashKey, max_hashKey);
-
-    std::cout << "\n  x_range: " << x_range << " y_range: " << y_range
-              << " min_HashKey: " << min_hashKey
-              << " max_HashKey: " << max_hashKey << std::endl;
-
-    for (int i = min_hashKey; i < max_hashKey + 1; i++)
-    {
-        HashNode<KeyType, ValueType> *temp = table[i];
-        while (temp != NULL)
-        {
-            ValueType candidate = temp->getValue();
-            if (((candidate.lon - max_y) * (candidate.lon - min_y) <= 0) &&
-                ((candidate.lat - max_x) * (candidate.lat - min_x) <= 0))
-                result->push_back(candidate);
-            temp = temp->getNext();
-        }
-    }
-
-    if (result->empty())
-        return false;
-    return true;
-}
-
-template <typename KeyType, typename ValueType, typename ModelType>
-void LearnedHashMap<KeyType, ValueType, ModelType>::resize(int newSize)
-{
-    HashNode<KeyType, ValueType> **newTable =
-        new HashNode<KeyType, ValueType> *[newSize];
-    memcpy(newTable, table, numSlots * sizeof(int));
-
-    numSlots = newSize;
-    delete[] table;
-    table = newTable;
-}
-
-template <typename KeyType, typename ValueType, typename ModelType>
 void LearnedHashMap<KeyType, ValueType, ModelType>::display_stats(
     bool showFullStats) const
 {
@@ -480,8 +528,9 @@ void LearnedHashMap<KeyType, ValueType, ModelType>::display_stats(
     // if (showFullStats)
     //     std::cout << " }" << std::endl;
     std::cout << "\n  Total entries: " << numEntries
+              << "\n  Total head nodes: " << numHeadNode
               << "\n  Total slots: " << numSlots
-              << "\n  Loading factor: " << numEntries / (double)numSlots
+              << "\n  Loading factor: " << numHeadNode / (double)numSlots
               << std::endl;
 }
 
@@ -504,13 +553,20 @@ void LearnedHashMap<KeyType, ValueType, ModelType>::display() const
                     isFirst = false;
                 }
                 ValueType item = temp->getValue();
-                if (typeid(item) == typeid(std::pair<Point, Point>))
-                {
-                    std::cout << "[(" << item.first.id << "," << item.first.lat
-                              << "," << item.first.lon << item.second.id << ","
-                              << item.second.lat << "," << item.second.lon
-                              << ")] -> ";
-                }
+                // if (typeid(item) == typeid(std::pair<Point, Point>))
+                // {
+                //     std::cout << "[(" << item.first.id << "," <<
+                //     item.first.lat
+                //               << "," << item.first.lon << item.second.id <<
+                //               ","
+                //               << item.second.lat << "," << item.second.lon
+                //               << ")] -> ";
+                // }
+                // else
+                // {
+                std::cout << "[(" << item.id << "," << item.lat << ","
+                          << item.lon << ")] -> ";
+                // }
                 temp = temp->getNext();
             }
             std::cout << std::endl;

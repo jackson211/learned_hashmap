@@ -13,5 +13,5 @@ mkdir -p results
 
 echo "Run learned hashmap on ${FILE_NAME}"
 cmake --build build
-build/main $OBJ_TYPE $INPUT_FILE #> results/${OUT}
+gtime -v build/main $OBJ_TYPE $INPUT_FILE #> results/${OUT}
 

@@ -3,6 +3,7 @@
 #ifndef ENTRY_H
 #define ENTRY_H
 
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <vector>
@@ -107,4 +108,22 @@ bool inRange(const std::pair<Point, Point> &range, const Point &p)
                   ((lon - max_lon) * (lon - min_lon) <= 0);
     return result;
 }
+
+enum distance_function
+{
+    manhattan,
+    euclidean
+};
+
+long double manhattan_distance(const Point &p1, const Point &p2)
+{
+    return std::abs(p1.lat - p2.lat) + std::abs(p1.lon - p2.lon);
+}
+
+long double euclidean_distance(const Point &p1, const Point &p2)
+{
+    return std::sqrt(std::pow((p1.lat - p2.lat), 2) +
+                     std::pow((p1.lon - p2.lon), 2));
+}
+
 #endif
