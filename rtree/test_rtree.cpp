@@ -116,19 +116,47 @@ int main(int argc, char *argv[])
     std::cout << "Build time: " << duration.count() << " nanoseconds\n"
               << std::endl;
 
+    // Range Serch
+
+    long double start_n = 0.5;
+    long double end_n = 0.5;
+    for (int i = 0; i < 10; i++)
+    {
+        long double step = i * 0.05;
+        long double range_min = start_n - step;
+        long double range_max = end_n + step;
+        std::cout << "Search Range: " << range_min << " - " << range_max
+                  << std::endl;
+        Rect search_rect(range_min, range_min, range_max, range_max);
+
+        start = std::chrono::high_resolution_clock::now();
+        nhits = tree.Search(search_rect.min, search_rect.max, MySearchCallback,
+                            NULL);
+        end = std::chrono::high_resolution_clock::now();
+        duration =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+        std::cout << "time: " << duration.count() << " nanoseconds\n"
+                  << "Search resulted in " << nhits << " hits\n"
+                  << std::endl;
+    }
+
     // Iterator test
     // int itIndex = 0;
     // RTree<int, long double, 2, float>::Iterator it;
-    // for (tree.GetFirst(it); !tree.IsNull(it); tree.GetNext(it)) {
-    //   int value = tree.GetAt(it);
+    // int count = 0;
+    // for (tree.GetFirst(it); !tree.IsNull(it); tree.GetNext(it))
+    // {
+    //     int value = tree.GetAt(it);
 
-    //   long double boundsMin[2] = {0, 0};
-    //   long double boundsMax[2] = {0, 0};
-    //   it.GetBounds(boundsMin, boundsMax);
-    //   printf("it[%d] %d = (%Lf,%Lf,%Lf,%Lf)\n", itIndex++, value,
-    //   boundsMin[0],
-    //          boundsMin[1], boundsMax[0], boundsMax[1]);
+    //     long double boundsMin[2] = {0.5, 0.5};
+    //     long double boundsMax[2] = {0.55, 0.55};
+    //     it.GetBounds(boundsMin, boundsMax);
+    //     printf("it[%d] %d = (%Lf,%Lf,%Lf,%Lf)\n", itIndex++, value,
+    //            boundsMin[0], boundsMin[1], boundsMax[0], boundsMax[1]);
+    //     count++;
     // }
+    // std::cout << "Counts: " << count << std::endl;
 
     std::vector<Rect> search_rects = rects;
 

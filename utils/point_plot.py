@@ -68,53 +68,34 @@ plt.rcParams.update(tex_fonts)
 sns.set_theme(style="darkgrid", color_codes=True)
 
 
-def plot(filename):
-    n = 114932854
-    s = 10000  # desired sample size
-    skip = sorted(random.sample(range(n), n-s))
-    df = pd.read_csv(filename, names=[
-                     'x', 'y'], delimiter=' ', skiprows=skip, keep_default_na=False)
+range_data = {
+    'size': [0, 0.012, 0.049, 0.111, 0.198, 0.310, 0.446, 0.607, 0.792, 0.997],
+    'R-Tree': [0.004, 0.337, 0.801, 1.198, 1.775, 2.277, 2.967, 3.509, 4.062, 4.15],
+    'LSPH': [0.004, 0.849, 1.533, 2.118, 2.812,  3.614, 4.253, 4.606, 5.197, 5.236],
+    # 'number': [0, 8034, 21305, 35374, 50347, 66121, 78701, 92934, 107705, 119560]
+}
+range_df = pd.DataFrame(
+    range_data, columns=['size', 'R-Tree', 'LSPH'])
+range_df = range_df.set_index('size', inplace=True)
 
-    # x, y = np.loadtxt(filename, delimiter=' ', unpack=True)
-    # print(x)
-    # print(y)
-    # x = np.array([1, 5, 15, 25, 31, 35, 45, 51])
-    # y = np.arange(0, 8)
 
-    # slope, intercept = np.polyfit(x, y, 1)
-    # print(f"Slope: {slope}, Intercept: {intercept}")
+def plot():
 
-    # line = [slope * i + intercept for i in x]
-    # print([int(i + 0.5) for i in line])
+    # figure(num=None, figsize=set_size(width), dpi=80, facecolor='w', edgecolor='k')
 
-    # data = {'x': x, 'y': y}
-    # df = pd.DataFrame(data, columns=['x', 'y'])
-    print(df)
-
-    figure(num=None, figsize=set_size(width),
-           dpi=80, facecolor='w', edgecolor='k')
-
-    sns_plot = sns.lmplot(x="x", y="y", data=df, fit_reg=False,
-                          scatter_kws={"s": 5, "alpha": .5})
-
-    # ax = sns.barplot(x="data", y="memory", hue="model", data=memory_df)
+    fig, ax = plt.subplots(1, 1, figsize=set_size(width))
+    ax = sns.lineplot(data=range_df,
+                      err_style='bars', marker="o")
+    # ax = sns.heatmap(range_df)
     # ax.set(yscale="log")
     # ax.axes.get_xaxis().get_label().set_visible(False)
-    # plt.ylabel("Memory [MB]")
+    plt.xlabel("Range Window Size (\%)")
+    plt.ylabel("Range Query Time (ms)")
     plt.show()
-    sns_plot.savefig('aus_sample.pdf', format='pdf', bbox_inches='tight')
-
-    # f = plt.figure()
-    # plt.scatter(x, y, s=5)
-    # plt.plot(x, line, 'b')
-    # plt.title('Sample Linear Regression CDF mapping on data', fontsize=11)
-    # plt.xlabel('$x$', fontsize=11)
-    # plt.ylabel('$y$', fontsize=11)
-    # plt.show()
-
-    # f.savefig("test.pgf", bbox_inches='tight')
+    # fig = sns_plot.get_figure()
+    fig.savefig('range_result.pdf', format='pdf', bbox_inches='tight')
 
 
 if __name__ == '__main__':
-    filename = sys.argv[1]
-    plot(filename)
+    # filename = sys.argv[1]
+    plot()

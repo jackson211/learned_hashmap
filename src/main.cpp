@@ -12,10 +12,6 @@
 #include "../include/learnedhashmap_a.h"
 #include "../include/linear.h"
 #include "../include/utils.h"
-#include "sys/sysinfo.h"
-#include "sys/types.h"
-
-struct sysinfo memInfo;
 
 typedef std::vector<long double> DataVec;
 typedef model::Linear<long double> LinearModel;
@@ -166,6 +162,17 @@ void point_data_flow(std::string const &filename)
     }
     DataVec train_x = sort_by_lat ? lats : lons;
 
+    auto max_lat = *std::max_element(lats.begin(), lats.end());
+    auto min_lat = *std::min_element(lats.begin(), lats.end());
+    auto max_lon = *std::max_element(lons.begin(), lons.end());
+    auto min_lon = *std::min_element(lons.begin(), lons.end());
+    auto lat_size = max_lat - min_lat;
+    auto lon_size = max_lon - min_lon;
+    std::cout << "  max lat: " << max_lat << "  min lat: " << min_lat
+              << "  max lon: " << max_lon << "  min lon: " << min_lon
+              << "  lat size: " << lat_size << "  lon size: " << lon_size
+              << std::endl;
+
     // Building hashmap
     LearnedHashMap<int, Point, LinearModel> hashmap =
         build_hashmap<int, Point, LinearModel>(sort_by_lat, train_x, train_y,
@@ -183,50 +190,55 @@ void point_data_flow(std::string const &filename)
      * Range query
      *
      */
-    // std::cout << "\n-RANGE QUERY";
+    std::cout << "\n-RANGE QUERY" << std::endl;
+    long double start_n = 0.5;
+    long double end_n = 0.5;
+    for (int i = 0; i < 10; i++)
+    {
+        long double step = i * 0.05;
+        long double range_min = start_n - step;
+        long double range_max = end_n + step;
 
-    // long double min[2] = {0.395, 0.398};
-    // long double max[2] = {0.4, 0.41};
-    // std::cout << "\n  Search range: {min_point: (" << min[0] << "," << min[1]
-    //           << "), max_point: (" << max[0] << "," << max[1] << ")}";
+        long double min[2] = {range_min, range_min};
+        long double max[2] = {range_max, range_max};
 
-    // std::vector<Point> result;
-    // bool found_result = hashmap.rangeSearch(min, max, &result);
+        std::cout << "\n"
+                  << range_min << " " << range_max << "\nPercentage: "
+                  << ((range_min - range_max) * (range_min - range_max)) /
+                         (lat_size * lon_size);
 
-    // if (found_result)
-    // {
-    //     std::cout << "  Search result: " << result.size() << std::endl;
-    //     for (size_t i = 0; i < result.size(); i++)
-    //     {
-    //         std::cout << "    " << result[i].id << " " << result[i].lat << "
-    //         "
-    //                   << result[i].lon << std::endl;
-    //     }
-    // }
-    // else
-    // {
-    //     std::cout << " No results found" << std::endl;
-    // }
+        std::vector<Point> result;
+        // Record range query time
+        auto start = std::chrono::high_resolution_clock::now();
+
+        bool found_result = hashmap.rangeSearch(min, max, &result);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+        std::cout << "Range Query look up time: " << duration.count()
+                  << " nanoseconds" << std::endl;
+
+        if (found_result)
+            std::cout << "  Search result size: " << result.size()
+                      << "\n Average look up time:"
+                      << duration.count() / result.size() << std::endl;
+        else
+            std::cout << " No results found" << std::endl;
+    }
 
     // Nearest neighbour search
 
     // select random Points from the dataset
-    std::vector<Point> out;
-    size_t n_values = 10;
-    std::sample(data.begin(), data.end(), std::back_inserter(out), n_values,
-                std::mt19937{std::random_device{}()});
+    // std::vector<Point> out;
+    // size_t n_values = 10;
+    // std::sample(data.begin(), data.end(), std::back_inserter(out), n_values,
+    //             std::mt19937{std::random_device{}()});
 
-    Point p = out[0];
-    test_nearest_neighbor<LearnedHashMap<int, Point, LinearModel>>(p, hashmap);
-
-    sysinfo(&memInfo);
-    long long totalVirtualMem = memInfo.totalram;
-    // Add other values in next statement to avoid int overflow on right hand
-    // side...
-    totalVirtualMem += memInfo.totalswap;
-    totalVirtualMem *= memInfo.mem_unit;
-
-    std::cout << totalVirtualMem << std::endl;
+    // Point p = out[0];
+    // test_nearest_neighbor<LearnedHashMap<int, Point, LinearModel>>(p,
+    // hashmap);
 }
 
 void object_data_flow(std::string const &filename)
