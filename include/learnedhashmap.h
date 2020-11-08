@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <iostream>
 #include <limits>
+#include <queue>
 #include <unordered_map>
 #include <vector>
 
@@ -63,7 +64,7 @@ public:
                      ValueType &result);
     bool rangeSearch(long double *min, long double *max,
                      std::vector<ValueType> *result);
-    void nearestNeighborSearch(const Point &p, ValueType &result,
+    void nearestNeighborSearch(const Point &p, std::vector<ValueType> &result,
                                distance_function df);
     bool regionSearch(const long double lat, const long double lon,
                       std::pair<Point, Point> &value);
@@ -387,7 +388,7 @@ bool LearnedHashMap<KeyType, ValueType, ModelType>::rangeSearch(
 
 template <typename KeyType, typename ValueType, typename ModelType>
 void LearnedHashMap<KeyType, ValueType, ModelType>::nearestNeighborSearch(
-    const Point &p, ValueType &result, distance_function df)
+    const Point &p, std::vector<ValueType> &result, distance_function df)
 {
     unsigned long hashKey = hashFunc(sort_by_lat ? p.lat : p.lon);
     if (hashKey > numSlots)
@@ -401,23 +402,114 @@ void LearnedHashMap<KeyType, ValueType, ModelType>::nearestNeighborSearch(
     case euclidean:
         calculate_distance = &euclidean_distance;
     }
+    // Init Priority Queue
+    auto comp = [](const std::pair<long double, ValueType> &a,
+                   const std::pair<long double, ValueType> &b) {
+        return a.first < b.first;
+    };
 
+    std::priority_queue<std::pair<long double, ValueType>,
+                        std::vector<std::pair<long double, ValueType>>,
+                        decltype(comp)>
+        q(comp);
+
+    int k = 2;
+    long double previous_local_max = 0;
+    long double local_min = std::numeric_limits<float>::infinity();
+
+    // Search locally
     HashNode<KeyType, ValueType> *temp = table[hashKey];
-    long double nearest = std::numeric_limits<float>::infinity();
     while (temp != NULL)
     {
         ValueType temp_p = temp->getValue();
         if (p.lat != temp_p.lat && p.lon != temp_p.lon)
         {
             long double p_distance = calculate_distance(temp_p, p);
-            if (p_distance < nearest)
+            if (p_distance < local_min)
             {
-                nearest = p_distance;
-                result = temp_p;
+                local_min = p_distance;
+                // result.push_back(temp_p);
+                std::pair<long double, ValueType> value_pair =
+                    std::make_pair(p_distance, temp_p);
+                q.push(value_pair);
+            }
+            if (previous_local_max < p_distance)
+            {
+                previous_local_max = p_distance;
             }
         }
         temp = temp->getNext();
     }
+    // std::cout << previous_local_max << " " << local_min << std::endl;
+
+    // Expansion Search
+    unsigned long i = hashKey + 1;
+    unsigned long j = hashKey - 1;
+    // std::cout << "numSlots: " << numSlots << std::endl;
+    while ((local_min <= previous_local_max) && (i < numSlots) && (j > 0))
+    {
+        HashNode<KeyType, ValueType> *temp = table[i];
+        while (temp != NULL)
+        {
+            ValueType temp_p = temp->getValue();
+            if (p.lat != temp_p.lat && p.lon != temp_p.lon)
+            {
+                long double p_distance = calculate_distance(temp_p, p);
+                if (p_distance < local_min)
+                {
+                    local_min = p_distance;
+                    // result.push_back(temp_p);
+                    std::pair<long double, ValueType> value_pair =
+                        std::make_pair(p_distance, temp_p);
+                    q.push(value_pair);
+                    // std::cout << "Push" << value_pair.first << ", "
+                    //           << temp_p.lat << " - " << temp_p.lon <<
+                    //           std::endl;
+                }
+                if (previous_local_max < p_distance)
+                {
+                    previous_local_max = p_distance;
+                }
+            }
+            temp = temp->getNext();
+        }
+
+        HashNode<KeyType, ValueType> *temp_b = table[j];
+        while (temp_b != NULL)
+        {
+            ValueType temp_p = temp_b->getValue();
+            if (p.lat != temp_p.lat && p.lon != temp_p.lon)
+            {
+                long double p_distance = calculate_distance(temp_p, p);
+                if (p_distance < local_min)
+                {
+                    local_min = p_distance;
+                    // result.push_back(temp_p);
+                    std::pair<long double, ValueType> value_pair =
+                        std::make_pair(p_distance, temp_p);
+                    q.push(value_pair);
+                    // std::cout << "Push" << value_pair.first << ", "
+                    //           << temp_p.lat << " - " << temp_p.lon <<
+                    //           std::endl;
+                }
+                if (previous_local_max < p_distance)
+                {
+                    previous_local_max = p_distance;
+                }
+            }
+            temp_b = temp_b->getNext();
+        }
+        i++;
+        j--;
+    }
+
+    // std::cout << "Print queue" << std::endl;
+    // while (!q.empty())
+    // {
+    //     std::cout << q.top().first << " ";
+    //     q.pop();
+    // }
+    // std::cout << '\n';
 }
 
 template <typename KeyType, typename ValueType, typename ModelType>
@@ -557,9 +649,11 @@ void LearnedHashMap<KeyType, ValueType, ModelType>::display() const
                 // {
                 //     std::cout << "[(" << item.first.id << "," <<
                 //     item.first.lat
-                //               << "," << item.first.lon << item.second.id <<
+                //               << "," << item.first.lon << item.second.id
+                //               <<
                 //               ","
-                //               << item.second.lat << "," << item.second.lon
+                //               << item.second.lat << "," <<
+                //               item.second.lon
                 //               << ")] -> ";
                 // }
                 // else
