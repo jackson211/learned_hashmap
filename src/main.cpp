@@ -52,8 +52,9 @@ build_hashmap(const bool &sort_by_lat, const DataVec &train_x,
 }
 
 template <typename MapType>
-void test_performance(std::vector<Point> &data,
-                      std::vector<long double> &test_set, MapType &hashmap)
+void test_look_up_performance(std::vector<Point> &data,
+                              std::vector<long double> &test_set,
+                              MapType &hashmap)
 {
 
     /*
@@ -112,17 +113,9 @@ void test_performance(std::vector<Point> &data,
 template <typename MapType>
 void test_nearest_neighbor(const Point &p, MapType &hashmap)
 {
-    // std::cout << "\n  Random Points: "
-    //           << "rank " << p.id << " coordinates: " << p.lat << ", " <<
-    //           p.lon;
     std::vector<Point> result;
     distance_function df = euclidean;
     hashmap.nearestNeighborSearch(p, result, euclidean);
-
-    // for (int i = 0; i < result.size(); i++)
-    //     std::cout << "  Found nearest neighbor: [" << result[i].id << ", "
-    //               << result[i].lat << ", " << result[i].lon << "]" <<
-    //               std::endl;
 }
 
 void point_data_flow(std::string const &filename)
@@ -184,8 +177,8 @@ void point_data_flow(std::string const &filename)
     hashmap.display_stats(full_info);
     // hashmap.display();
 
-    test_performance<LearnedHashMap<int, Point, LinearModel>>(data, test_set,
-                                                              hashmap);
+    test_look_up_performance<LearnedHashMap<int, Point, LinearModel>>(
+        data, test_set, hashmap);
 
     /*
      *
