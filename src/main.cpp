@@ -9,7 +9,6 @@
 
 #include "../include/entry.h"
 #include "../include/learnedhashmap.h"
-#include "../include/learnedhashmap_a.h"
 #include "../include/linear.h"
 #include "../include/utils.h"
 
@@ -211,11 +210,10 @@ void point_data_flow(std::string const &filename)
                          (lat_size * lon_size);
 
         std::vector<Point> result;
+
         // Record range query time
         auto start = std::chrono::high_resolution_clock::now();
-
         bool found_result = hashmap.rangeSearch(min, max, &result);
-
         auto end = std::chrono::high_resolution_clock::now();
         auto duration =
             std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
@@ -232,38 +230,27 @@ void point_data_flow(std::string const &filename)
     }
 
     // Nearest neighbour search
-    // select random Points from the dataset
-
     std::cout << "\n-NEAREST NEIGHBOR QUERY" << std::endl;
-    std::vector<Point> out;
-    size_t n_values = 100;
-    std::sample(data.begin(), data.end(), std::back_inserter(out), n_values,
-                std::mt19937{std::random_device{}()});
+    std::vector<Point> knn_test_data;
+    size_t n_values = 1000;
+    std::cout << " number of test points: " << n_values << std::endl;
+    // select random Points from the dataset
+    std::sample(data.begin(), data.end(), std::back_inserter(knn_test_data),
+                n_values, std::mt19937{std::random_device{}()});
 
-    Point p = out[0];
+    // Test
     auto start = std::chrono::high_resolution_clock::now();
-    test_nearest_neighbor<LearnedHashMap<int, Point, LinearModel>>(p, hashmap);
+    for (int i = 0; i < n_values; i++)
+    {
+        test_nearest_neighbor<LearnedHashMap<int, Point, LinearModel>>(
+            knn_test_data[i], hashmap);
+    }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration =
         std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     std::cout << "  knn time: " << duration.count() << " nanoseconds"
               << "\n  Average look up time: " << duration.count() / n_values
               << " nanoseconds" << std::endl;
-
-    // std::cout << " number of points: " << out.size() << std::endl;
-    // auto start = std::chrono::high_resolution_clock::now();
-    // for (int i = 0; i < n_values; i++)
-    // {
-    //     test_nearest_neighbor<LearnedHashMap<int, Point,
-    //     LinearModel>>(out[i],
-    //                                                                    hashmap);
-    // }
-    // auto end = std::chrono::high_resolution_clock::now();
-    // auto duration =
-    //     std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    // std::cout << "\n  knn time: " << duration.count() << " nanoseconds"
-    //           << "\n  Average look up time: " << duration.count() / n_values
-    //           << " nanoseconds" << std::endl;
 }
 
 void object_data_flow(std::string const &filename)
