@@ -6,4 +6,4 @@ NAME="${FILE_NAME%.*}"
 OUT=rtree_${NAME}_range_results.txt
 
 echo "Run RTree"
-make && (gtime -v ./test_rtree $INPUT_FILE) &> ../results/${OUT}
+make && (gtime -v ./test_rtree $INPUT_FILE) #&> ../results/${OUT}

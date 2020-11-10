@@ -9,14 +9,6 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 project(LearnedHashMap)
 
-
-# find_package(OpenMP REQUIRED)
-# if (OPENMP_FOUND)
-#     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-# endif ()
-
-
 file(GLOB_RECURSE INCLUDE "${PROJECT_SOURCE_DIR}/include/*.h")
 
 add_executable(main
@@ -31,5 +23,3 @@ find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(main PUBLIC OpenMP::OpenMP_CXX)
 endif()
-
-
